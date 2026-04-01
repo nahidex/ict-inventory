@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  email     String   @unique @db.VarChar(100)
+  password  String   @db.VarChar(255)
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique @db.VarChar(20)
+  name      String   @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at")
+  assets    Asset[]
+
+  @@map("categories")
+}
+
+model Officer {
+  id           Int            @id @default(autoincrement())
+  name         String         @db.VarChar(100)
+  designation  String?        @db.VarChar(100)
+  department   String?        @db.VarChar(100)
+  phone        String?        @db.VarChar(20)
+  email        String?        @db.VarChar(100)
+  photoUrl     String?        @map("photo_url") @db.VarChar(255)
+  isActive     Boolean        @default(true) @map("is_active")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  assignments  Assignment[]
+  nocClearance NocClearance[]
+
+  @@map("officers")
+}
+
+model Asset {
+  id              Int            @id @default(autoincrement())
+  categoryId      Int?           @map("category_id")
+  assetTag        String         @unique @map("asset_tag") @db.VarChar(50)
+  brand           String?        @db.VarChar(50)
+  model           String?        @db.VarChar(50)
+  serialNumber    String?        @unique @map("serial_number") @db.VarChar(100)
+  purchaseDate    DateTime?      @map("purchase_date") @db.Date
+  purchaseSource  PurchaseSource @default(Budget) @map("purchase_source")
+  initialImageUrl String?        @map("initial_image_url") @db.Text
+  status          AssetStatus    @default(Available)
+  category        Category?      @relation(fields: [categoryId], references: [id])
+  assignments     Assignment[]
+  maintenance     Maintenance[]
+  activityLogs    ActivityLog[]
+
+  @@map("assets")
+}
+
+model Assignment {
+  id                 Int       @id @default(autoincrement())
+  assetId            Int?      @map("asset_id")
+  officerId          Int?      @map("officer_id")
+  issueDate          DateTime  @map("issue_date") @db.Date
+  actualReturnDate   DateTime? @map("actual_return_date") @db.Date
+  returnCondition    String?   @map("return_condition") @db.Text
+  returnImageUrl     String?   @map("return_image_url") @db.Text
+  comments           String?   @db.Text
+  issuedBy           Int?      @map("issued_by")
+  asset              Asset?    @relation(fields: [assetId], references: [id])
+  officer            Officer?  @relation(fields: [officerId], references: [id])
+
+  @@map("assignments")
+}
+
+model Maintenance {
+  id               Int            @id @default(autoincrement())
+  assetId          Int?           @map("asset_id")
+  issueDescription String?        @map("issue_description") @db.Text
+  sentDate         DateTime?      @map("sent_date") @db.Date
+  receiveDate      DateTime?      @map("receive_date") @db.Date
+  vendorName       String?        @map("vendor_name") @db.VarChar(100)
+  repairCost       Decimal        @default(0.00) @map("repair_cost") @db.Decimal(10, 2)
+  repairStatus     RepairStatus   @default(Pending) @map("repair_status")
+  asset            Asset?         @relation(fields: [assetId], references: [id])
+
+  @@map("maintenance")
+}
+
+model NocClearance {
+  id              Int       @id @default(autoincrement())
+  officerId       Int?      @map("officer_id")
+  applicationDate DateTime? @map("application_date") @db.Date
+  approvalDate    DateTime? @map("approval_date") @db.Date
+  status          NocStatus @default(Pending)
+  remarks         String?   @db.Text
+  officer         Officer?  @relation(fields: [officerId], references: [id])
+
+  @@map("noc_clearance")
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  assetId     Int?     @map("asset_id")
+  actionType  String?  @map("action_type") @db.VarChar(50)
+  description String?  @db.Text
+  performedAt DateTime @default(now()) @map("performed_at")
+  asset       Asset?   @relation(fields: [assetId], references: [id])
+
+  @@map("activity_logs")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum AssetStatus {
+  Available
+  Assigned
+  Under_Repair @map("Under Repair")
+  Disposed
+  Returned
+  Maintenance_Returned @map("Maintenance Returned")
+}
+
+enum PurchaseSource {
+  Budget
+  Admin_2 @map("Admin-2")
+  Others
+}
+
+enum RepairStatus {
+  Pending
+  Completed
+}
+
+enum NocStatus {
+  Pending
+  Approved
+  Rejected
+}

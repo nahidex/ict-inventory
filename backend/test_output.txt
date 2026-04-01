@@ -1,0 +1,182 @@
+  console.log
+    [dotenv@17.3.1] injecting env (1) from .env.test -- tip: ΓÜÖ∩╕Å  write to custom object with { processEnv: myObject }
+
+      at _log (../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/tests/asset.test.ts
+  Asset Endpoints
+    GET /api/assets
+      ΓêÜ should return paginated assets with valid token (9 ms)
+      ΓêÜ should return second page of assets (5 ms)
+      ΓêÜ should fail without token (3 ms)
+    GET /api/assets/:id
+      ΓêÜ should return a single asset by id (5 ms)
+      ΓêÜ should return 404 if asset not found (4 ms)
+      ΓêÜ should fail without token (2 ms)
+    POST /api/assets
+      ΓêÜ should create a new asset with valid data (14 ms)
+      ΓêÜ should fail to create duplicate assetTag (5 ms)
+      ΓêÜ should fail without assetTag (2 ms)
+      ΓêÜ should fail without token (2 ms)
+    PATCH /api/assets/:id
+      ΓêÜ should update asset details (6 ms)
+      ΓêÜ should return 404 if asset to update not found (3 ms)
+    DELETE /api/assets/:id
+      ΓêÜ should delete an asset (7 ms)
+      ΓêÜ should return 404 if asset to delete not found (3 ms)
+
+  console.log
+    [dotenv@17.3.1] injecting env (1) from .env.test -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+      at _log (../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/tests/auth.test.ts
+  Auth Endpoints
+    POST /api/auth/register
+      ΓêÜ should register a new user successfully (79 ms)
+      ΓêÜ should fail if email already exists (64 ms)
+      ΓêÜ should fail if required fields are missing (2 ms)
+    POST /api/auth/login
+      ΓêÜ should login successfully with correct credentials (59 ms)
+      ΓêÜ should fail with incorrect password (58 ms)
+      ΓêÜ should fail with non-existent email (3 ms)
+    GET /api/auth/me
+      ΓêÜ should return user details with a valid token (4 ms)
+      ΓêÜ should fail with no token (2 ms)
+      ΓêÜ should fail with invalid token (2 ms)
+    POST /api/auth/logout
+      ΓêÜ should return success message on logout (2 ms)
+      ΓêÜ should fail to logout without token (1 ms)
+
+  console.log
+    [dotenv@17.3.1] injecting env (1) from .env.test -- tip: ≡ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/tests/officer.test.ts
+  Officer Endpoints
+    POST /api/officers
+      ΓêÜ should create a new officer (8 ms)
+      ΓêÜ should fail without officer name (2 ms)
+    GET /api/officers
+      ΓêÜ should return paginated officers (4 ms)
+    GET /api/officers/:id
+      ΓêÜ should return a single officer by ID (5 ms)
+      ΓêÜ should return 404 for non-existent officer (3 ms)
+    PATCH /api/officers/:id
+      ΓêÜ should update officer details (6 ms)
+    DELETE /api/officers/:id
+      ΓêÜ should delete an officer (10 ms)
+      ΓêÜ should fail if officer has assignments (13 ms)
+
+  console.log
+    [dotenv@17.3.1] injecting env (1) from .env.test -- tip: ≡ƒ¢á∩╕Å  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/tests/assignment.test.ts
+  Assignment Endpoints
+    POST /api/assignments/issue
+      ΓêÜ should issue an asset to an officer (10 ms)
+      ΓêÜ should fail if asset is already assigned (2 ms)
+    POST /api/assignments/return/:id
+      ΓêÜ should return an asset (9 ms)
+      ΓêÜ should fail if already returned (4 ms)
+    GET /api/assignments/active/:officerId
+      ΓêÜ should return active assignments for an officer (3 ms)
+      ΓêÜ should show 0 active after return (2 ms)
+
+  console.log
+    [dotenv@17.3.1] injecting env (1) from .env.test -- tip: ≡ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+
+      at _log (../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/tests/noc.test.ts
+  NOC Endpoints
+    Clearance Check & NOC Process
+      ΓêÜ should show officer is clear initially (27 ms)
+      ΓêÜ should show officer NOT clear after assignment (9 ms)
+      ΓêÜ should fail NOC application if not clear (4 ms)
+      ΓêÜ should allow NOC application after returning assets (11 ms)
+      ΓêÜ should approve a pending NOC (7 ms)
+
+  console.log
+    [dotenv@17.3.1] injecting env (1) from .env.test -- tip: ≡ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/tests/maintenance.test.ts
+  Maintenance Endpoints
+    POST /api/maintenance/send
+      ΓêÜ should send an asset to maintenance (10 ms)
+      ΓêÜ should fail if asset is already under repair (2 ms)
+    PUT /api/maintenance/receive/:id
+      ΓêÜ should receive an asset from maintenance (8 ms)
+    GET /api/maintenance/history/:assetId
+      ΓêÜ should return maintenance history for an asset (4 ms)
+
+  console.log
+    [dotenv@17.3.1] injecting env (1) from .env.test -- tip: ≡ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+
+      at _log (../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/tests/category.test.ts
+  Category Endpoints
+    POST /api/categories
+      ΓêÜ should create a new category (12 ms)
+      ΓêÜ should fail with duplicate code (4 ms)
+    GET /api/categories
+      ΓêÜ should return all categories (4 ms)
+    PATCH /api/categories/:id
+      ΓêÜ should update category name (8 ms)
+    DELETE /api/categories/:id
+      ΓêÜ should delete a category (8 ms)
+      ΓêÜ should fail if category has assets (9 ms)
+
+  console.log
+    [dotenv@17.3.1] injecting env (1) from .env.test -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+
+      at _log (../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/tests/user-rbac.test.ts
+  User Management and RBAC API
+    ΓêÜ Admin should be able to list users (5 ms)
+    ΓêÜ Regular User should NOT be able to list users (2 ms)
+    ΓêÜ Admin should be able to promote a user to ADMIN (8 ms)
+    ΓêÜ Admin should NOT be able to delete themselves (3 ms)
+
+  console.log
+    [dotenv@17.3.1] injecting env (1) from .env.test -- tip: ΓÜÖ∩╕Å  suppress all logs with { quiet: true }
+
+      at _log (../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/tests/activity-log.test.ts
+  Activity Log API
+    ΓêÜ should list activity logs (5 ms)
+    ΓêÜ should generate log on asset issue (15 ms)
+    ΓêÜ should return timeline for a specific asset (3 ms)
+
+  console.log
+    [dotenv@17.3.1] injecting env (1) from .env.test -- tip: ΓÜÖ∩╕Å  enable debug logging with { debug: true }
+
+      at _log (../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/tests/dashboard.test.ts
+  Dashboard API
+    ΓêÜ should return dashboard statistics (12 ms)
+
+  console.log
+    [dotenv@17.3.1] injecting env (1) from .env.test -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+      at _log (../node_modules/dotenv/lib/main.js:139:11)
+
+PASS src/tests/health.test.ts
+  Health Check Endpoints
+    ΓêÜ should return health status status 200 (13 ms)
+    ΓêÜ should return base route status 200 (3 ms)
+
+Test Suites: 11 passed, 11 total
+Tests:       64 passed, 64 total
+Snapshots:   0 total
+Time:        5.088 s
+Ran all test suites.
