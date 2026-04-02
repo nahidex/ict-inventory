@@ -31,6 +31,7 @@ model Category {
 
 model Officer {
   id           Int            @id @default(autoincrement())
+  branchId     Int?           @map("branch_id")
   name         String         @db.VarChar(100)
   designation  String?        @db.VarChar(100)
   department   String?        @db.VarChar(100)
@@ -39,8 +40,10 @@ model Officer {
   photoUrl     String?        @map("photo_url") @db.VarChar(255)
   isActive     Boolean        @default(true) @map("is_active")
   createdAt    DateTime       @default(now()) @map("created_at")
+  branch       Branch?        @relation(fields: [branchId], references: [id])
   assignments  Assignment[]
   nocClearance NocClearance[]
+  assets       Asset[]
 
   @@map("officers")
 }
@@ -48,15 +51,20 @@ model Officer {
 model Asset {
   id              Int            @id @default(autoincrement())
   categoryId      Int?           @map("category_id")
+  branchId        Int            @map("branch_id")
+  currentOfficerId Int?          @map("current_officer_id")
   assetTag        String         @unique @map("asset_tag") @db.VarChar(50)
   brand           String?        @db.VarChar(50)
   model           String?        @db.VarChar(50)
   serialNumber    String?        @unique @map("serial_number") @db.VarChar(100)
   purchaseDate    DateTime?      @map("purchase_date") @db.Date
   purchaseSource  PurchaseSource @default(Budget) @map("purchase_source")
+  locationDetails String?        @map("location_details") @db.VarChar(255)
   initialImageUrl String?        @map("initial_image_url") @db.Text
   status          AssetStatus    @default(Available)
   category        Category?      @relation(fields: [categoryId], references: [id])
+  branch          Branch         @relation(fields: [branchId], references: [id])
+  currentOfficer  Officer?       @relation(fields: [currentOfficerId], references: [id])
   assignments     Assignment[]
   maintenance     Maintenance[]
   activityLogs    ActivityLog[]
@@ -146,4 +154,25 @@ enum NocStatus {
   Pending
   Approved
   Rejected
+}
+
+enum BranchStatus {
+  Active
+  Inactive
+}
+
+model Branch {
+  id         Int          @id @default(autoincrement())
+  name       String       @db.VarChar(100)
+  code       String       @unique @db.VarChar(20)
+  location   String       @db.VarChar(255)
+  roomNumber String?      @map("room_number") @db.VarChar(20)
+  phoneExt   String?      @map("phone_ext") @db.VarChar(20)
+  status     BranchStatus @default(Active)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+  assets     Asset[]
+  officers   Officer[]
+
+  @@map("branches")
 }
