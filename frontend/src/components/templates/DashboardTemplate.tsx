@@ -28,13 +28,11 @@ export default function DashboardTemplate({ children }: DashboardTemplateProps) 
       <div className="min-h-screen bg-background text-on-surface">
         <Sidebar />
         <main 
-          className="transition-all duration-300 min-h-screen"
-          style={{ marginLeft: isCollapsed ? '80px' : '280px' }}
+          className="transition-all duration-300 min-h-screen pt-36 lg:pt-24 pb-12 px-4 lg:px-8 max-w-[1600px] mx-auto"
+          style={{ marginLeft: typeof window !== 'undefined' && window.innerWidth < 1024 ? '0' : (isCollapsed ? '80px' : '280px') }}
         >
           <TopBar />
-          <div className="pt-24 pb-12 px-8 max-w-[1600px] mx-auto">
-            {children}
-          </div>
+          {children}
           <FAB />
         </main>
       </div>

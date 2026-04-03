@@ -132,11 +132,30 @@ Base URL: `http://localhost:3000/api`
 
 - **Endpoint:** `POST /officers`
 - **Request (Multipart/form-data):**
+  - `name`: Rahim Ahmed (বাধ্যতামূলক)
+  - `designation`: Assistant Manager
+  - `department`: IT
+  - `phone`: 017XXXXXXXX
+  - `email`: rahim@example.com
+  - `branchId`: 1 (বাধ্যতামূলক)
+  - `photo`: (File upload - অপশনাল)
+  - `photoUrl`: https://example.com/photo.jpg (ইউআরএল লিংক - অপশনাল)
+
+- **Note:** যদি `photo` (ফাইল) এবং `photoUrl` (লিংক) দুটিই পাঠানো হয়, তবে আপলোড করা ফাইলটিকে অগ্রাধিকার দেওয়া হবে।
+
+#### 3. Update Officer
+
+- **Endpoint:** `PATCH /officers/:id`
+- **Request (Multipart/form-data):**
   - `name`: Rahim Ahmed
   - `designation`: Assistant Manager
   - `department`: IT
+  - `phone`: 017XXXXXXXX
   - `email`: rahim@example.com
-  - `photo`: (File upload)
+  - `branchId`: 1
+  - `isActive`: true/false
+  - `photo`: (File upload - অপশনাল)
+  - `photoUrl`: https://example.com/photo.jpg (ইউআরএল লিংক - অপশনাল)
 
 ---
 

@@ -1,11 +1,13 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { MaterialIcon } from '../atoms/Icons';
 import { useSidebar } from '../templates/DashboardTemplate';
+import { authService } from '../../services/auth.service';
 
 const navItems = [
   { icon: 'dashboard', label: 'ড্যাশবোর্ড', path: '/' },
   { icon: 'inventory_2', label: 'ইনভেন্টরি', path: '/inventory' },
+  { icon: 'domain', label: 'ব্রাঞ্চ ম্যানেজমেন্ট', path: '/branches' },
   { icon: 'person_search', label: 'অফিসার ম্যানেজমেন্ট', path: '/officers' },
   { icon: 'assignment_return', label: 'ইস্যু/রিটার্ন', path: '/assignments' },
   { icon: 'build', label: 'মেইনটেন্যান্স', path: '/maintenance' },
@@ -16,6 +18,12 @@ const navItems = [
 
 export default function Sidebar() {
   const { isCollapsed, setIsCollapsed } = useSidebar();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    authService.logout();
+    navigate('/login');
+  };
 
   return (
     <motion.aside 
@@ -92,11 +100,11 @@ export default function Sidebar() {
       </nav>
 
       <div className={`pt-4 border-t border-outline-variant space-y-2 ${isCollapsed ? 'px-0' : 'px-3'}`}>
-        <motion.a
-          href="#"
+        <motion.button
+          onClick={handleLogout}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className={`flex items-center text-error hover:bg-error-container rounded-full transition-all duration-200 overflow-hidden ${
+          className={`w-full flex items-center text-error hover:bg-error-container rounded-full transition-all duration-200 overflow-hidden ${
             isCollapsed ? 'justify-center h-14 w-14 mx-auto' : 'gap-3 px-4 py-3.5'
           }`}
         >
@@ -104,7 +112,7 @@ export default function Sidebar() {
             <MaterialIcon name="logout" size={24} />
           </div>
           {!isCollapsed && <span className="text-sm font-sans whitespace-nowrap">Logout</span>}
-        </motion.a>
+        </motion.button>
       </div>
     </motion.aside>
   );

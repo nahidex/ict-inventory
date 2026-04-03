@@ -37,7 +37,7 @@ describe("Officer Endpoints", () => {
   });
 
   describe("POST /api/officers", () => {
-    it("should create a new officer", async () => {
+    it("should create a new officer with photoUrl link", async () => {
       const res = await request(app)
         .post("/api/officers")
         .set("Authorization", `Bearer ${token}`)
@@ -48,11 +48,32 @@ describe("Officer Endpoints", () => {
           phone: "01711111111",
           email: "john@example.com",
           branchId: branchId,
+          photoUrl: "https://example.com/photo.jpg"
         });
 
       expect(res.status).toBe(201);
       expect(res.body.data.name).toBe("John Doe");
-      expect(res.body.data.email).toBe("john@example.com");
+      expect(res.body.data.photoUrl).toBe("https://example.com/photo.jpg");
+    });
+
+    it("should create a new officer via file upload", async () => {
+      // Create a dummy file for testing
+      const filePath = '/tmp/test-image.jpg';
+      require('fs').writeFileSync(filePath, 'dummy content');
+
+      const res = await request(app)
+        .post("/api/officers")
+        .set("Authorization", `Bearer ${token}`)
+        .field('name', 'Jane Smith')
+        .field('designation', 'Developer')
+        .field('branchId', branchId)
+        .attach('photo', filePath);
+
+      expect(res.status).toBe(201);
+      expect(res.body.data.name).toBe("Jane Smith");
+      expect(res.body.data.photoUrl).toContain('/uploads/officers/');
+      
+      require('fs').unlinkSync(filePath);
     });
 
     it("should fail without officer name", async () => {

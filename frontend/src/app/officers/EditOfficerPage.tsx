@@ -2,30 +2,8 @@ import { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { MaterialIcon } from '../../components/atoms/Icons';
-
-// Mock data for initial load in edit mode
-const mockOfficers = [
-  {
-    id: 47,
-    name: "Recipient Officer",
-    designation: "সিনিয়র সিস্টেম অ্যানালিস্ট",
-    department: "আইসিটি শাখা",
-    phone: "01712345678",
-    email: "officer@example.gov.bd",
-    photoUrl: "https://picsum.photos/seed/officer1/100/100",
-    isActive: true
-  },
-  {
-    id: 48,
-    name: "Sultana Razia",
-    designation: "প্রোগ্রামার",
-    department: "প্রশাসন শাখা",
-    phone: "01812345679",
-    email: "razia@example.gov.bd",
-    photoUrl: "https://picsum.photos/seed/officer2/100/100",
-    isActive: true
-  }
-];
+import { officerService } from '../../services/officer.service';
+import { branchService, Branch } from '../../services/branch.service';
 
 export default function EditOfficerPage() {
   const navigate = useNavigate();
@@ -38,42 +16,75 @@ export default function EditOfficerPage() {
     phone: '',
     email: '',
     photoUrl: '',
+    branchId: '',
     isActive: true
   });
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [officerData, branchesData] = await Promise.all([
+          officerService.getById(id!),
+          branchService.getAll()
+        ]);
+        
+        setFormData({
+          name: officerData.name,
+          designation: officerData.designation,
+          department: officerData.department,
+          phone: officerData.phone,
+          email: officerData.email,
+          photoUrl: officerData.photoUrl || '',
+          branchId: officerData.branchId || '',
+          isActive: officerData.isActive
+        });
+        setBranches(branchesData);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchData();
+    }
+  }, [id]);
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const target = e.target;
+    const name = target.name;
+    const value = target.type === 'checkbox' ? (target as HTMLInputElement).checked : target.value;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    try {
+      await officerService.update(id!, formData);
+      alert('অফিসারের তথ্য সফলভাবে আপডেট করা হয়েছে!');
+      navigate('/officers');
+    } catch (error) {
+      console.error('Failed to update officer:', error);
+      alert('তথ্য আপডেট করতে সমস্যা হয়েছে।');
+    }
+  };
 
   const getInitials = (name: string) => {
     if (!name) return '';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
-  useEffect(() => {
-    // Simulate fetching officer data
-    const officer = mockOfficers.find(o => o.id === Number(id));
-    if (officer) {
-      setFormData({
-        name: officer.name,
-        designation: officer.designation,
-        department: officer.department,
-        phone: officer.phone,
-        email: officer.email,
-        photoUrl: officer.photoUrl || '',
-        isActive: officer.isActive
-      });
-    }
-  }, [id]);
-
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target as HTMLInputElement;
-    const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
-    setFormData(prev => ({ ...prev, [name]: val }));
-  };
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    console.log('Updated Officer Data:', formData);
-    alert('অফিসারের তথ্য সফলভাবে আপডেট করা হয়েছে!');
-    navigate('/officers');
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -212,6 +223,27 @@ export default function EditOfficerPage() {
                       placeholder="example@gov.bd"
                       className="w-full pl-12 pr-4 py-3.5 bg-surface-container-low border border-outline-variant rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium transition-all"
                     />
+                  </div>
+                </div>
+
+                {/* Branch Selection */}
+                <div className="md:col-span-2 space-y-1.5">
+                  <label className="text-xs font-bold text-on-surface-variant ml-1 uppercase tracking-wider">ব্রাঞ্চ/শাখা *</label>
+                  <div className="relative">
+                    <MaterialIcon name="domain" className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant" size={20} />
+                    <select
+                      required
+                      name="branchId"
+                      value={formData.branchId}
+                      onChange={handleInputChange}
+                      className="w-full pl-12 pr-10 py-3.5 bg-surface-container-low border border-outline-variant rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 font-medium transition-all appearance-none"
+                    >
+                      <option value="">ব্রাঞ্চ সিলেক্ট করুন</option>
+                      {branches.map(branch => (
+                        <option key={branch.id} value={branch.id}>{branch.name} ({branch.code})</option>
+                      ))}
+                    </select>
+                    <MaterialIcon name="expand_more" className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" size={20} />
                   </div>
                 </div>
 

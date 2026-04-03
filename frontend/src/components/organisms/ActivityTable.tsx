@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { MaterialIcon } from '../atoms/Icons';
+import { Badge } from '../atoms/Badge';
 
 const activities = [
   {
@@ -97,10 +98,13 @@ export default function ActivityTable() {
                 </td>
                 <td className="px-6 py-4 text-sm text-on-surface-variant font-medium">{activity.date}</td>
                 <td className="px-8 py-4 text-right">
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ring-1 ring-inset ${activity.statusColor}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${activity.dotColor}`}></span>
-                    {activity.status}
-                  </span>
+                  <Badge 
+                    label={activity.status} 
+                    variant={
+                      activity.status === 'ভালো' ? 'success' : 
+                      activity.status === 'ক্ষতিগ্রস্ত' ? 'error' : 'neutral'
+                    }
+                  />
                 </td>
               </motion.tr>
             ))}

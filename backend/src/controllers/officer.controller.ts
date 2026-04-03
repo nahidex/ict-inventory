@@ -15,6 +15,13 @@ export const getOfficers = async (
         skip,
         take: limit,
         include: {
+          branch: {
+            select: {
+              id: true,
+              name: true,
+              code: true
+            }
+          },
           _count: {
             select: { assignments: true },
           },
@@ -53,6 +60,13 @@ export const getOfficerById = async (
     const officer = await prisma.officer.findUnique({
       where: { id },
       include: {
+        branch: {
+          select: {
+            id: true,
+            name: true,
+            code: true
+          }
+        },
         assignments: {
           include: {
             asset: true,
@@ -126,11 +140,15 @@ export const createOfficer = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const { name, designation, department, phone, email } = req.body;
+    const { name, designation, department, phone, email, photoUrl: photoUrlFromLink, branchId } = req.body;
     let photoUrl = null;
 
+    // Logic: If there's an uploaded file, use it. 
+    // Otherwise, if there's a link in photoUrl field, use that.
     if (req.file) {
-      photoUrl = `/uploads/${req.file.filename}`;
+      photoUrl = `/uploads/officers/${req.file.filename}`;
+    } else if (photoUrlFromLink) {
+      photoUrl = photoUrlFromLink;
     }
 
     if (!name) {
@@ -146,6 +164,7 @@ export const createOfficer = async (
         phone,
         email,
         photoUrl,
+        branchId: branchId ? parseInt(branchId) : null,
       },
     });
 
@@ -170,11 +189,16 @@ export const updateOfficer = async (
       return;
     }
 
-    const { name, designation, department, phone, email, isActive } = req.body;
+    const { name, designation, department, phone, email, isActive, photoUrl: photoUrlFromLink, branchId } = req.body;
     let photoUrl = undefined;
 
+    // Logic: If there's an uploaded file, use it. 
+    // Otherwise, if there's a link in photoUrl field, use that.
+    // Otherwise, keep the existing one (don't update).
     if (req.file) {
-      photoUrl = `/uploads/${req.file.filename}`;
+      photoUrl = `/uploads/officers/${req.file.filename}`;
+    } else if (photoUrlFromLink !== undefined) {
+      photoUrl = photoUrlFromLink;
     }
 
     const existingOfficer = await prisma.officer.findUnique({ where: { id } });
@@ -192,7 +216,8 @@ export const updateOfficer = async (
         phone,
         email,
         photoUrl,
-        isActive: isActive !== undefined ? isActive : undefined,
+        branchId: branchId ? parseInt(branchId) : undefined,
+        isActive: isActive !== undefined ? (isActive === 'true' || isActive === true) : undefined,
       },
     });
 
