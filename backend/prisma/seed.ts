@@ -1,15 +1,14 @@
 import {
   PrismaClient,
   AssetStatus,
-  RepairStatus,
-  NocStatus,
+  PurchaseSource,
 } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("বাংলায় বিস্তারিত সিডিং শুরু হচ্ছে...");
+  console.log("নতুন ব্রাঞ্চ ডেটা দিয়ে সিডিং শুরু হচ্ছে...");
   
   const password = await bcrypt.hash("password123", 10);
 
@@ -26,121 +25,130 @@ async function main() {
   });
 
   // ২. ক্যাটাগরি (Categories)
-  const lpt = await prisma.category.upsert({
-    where: { code: "LPT" },
-    update: {},
-    create: { name: "ল্যাপটপ", code: "LPT" },
-  });
-  const mon = await prisma.category.upsert({
-    where: { code: "MON" },
-    update: {},
-    create: { name: "মনিটর", code: "MON" },
-  });
-  const prn = await prisma.category.upsert({
-    where: { code: "PRN" },
-    update: {},
-    create: { name: "প্রিন্টার", code: "PRN" },
-  });
+  const categories = [
+    { name: "ল্যাপটপ", code: "LPT" },
+    { name: "মনিটর", code: "MON" },
+    { name: "প্রিন্টার", code: "PRN" },
+    { name: "ডেস্কটপ", code: "DSK" },
+    { name: "স্ক্যানার", code: "SCN" },
+    { name: "প্রজেক্টর", code: "PRJ" },
+    { name: "ইউপিএস", code: "UPS" },
+  ];
 
-  // ৩. শাখা (Branches)
-  const b1 = await prisma.branch.upsert({
-    where: { code: "ADMIN_01" },
-    update: {},
-    create: {
-      name: "প্রশাসন শাখা-১",
-      code: "ADMIN_01",
-      location: "৪র্থ তলা, উত্তর পাশ",
-      roomNumber: "৪০২",
-      phoneExt: "১১০",
-      status: "Active",
-    },
-  });
-  const b2 = await prisma.branch.upsert({
-    where: { code: "ICT_DEPT" },
-    update: {},
-    create: {
-      name: "আইসিটি বিভাগ",
-      code: "ICT_DEPT",
-      location: "৫ম তলা",
-      roomNumber: "৫০৫",
-      phoneExt: "২২০",
-      status: "Active",
-    },
-  });
-  const b3 = await prisma.branch.upsert({
-    where: { code: "HR_SEC" },
-    update: {},
-    create: {
-      name: "এইচআর শাখা",
-      code: "HR_SEC",
-      location: "৩য় তলা",
-      roomNumber: "৩০১",
-      phoneExt: "৩১০",
-      status: "Active",
-    },
-  });
+  const catMap: any = {};
+  for (const c of categories) {
+    const created = await prisma.category.upsert({
+      where: { code: c.code },
+      update: {},
+      create: c,
+    });
+    catMap[c.code] = created.id;
+  }
+
+  // ৩. নতুন শাখা/ব্রাঞ্চ ডেটা (Branches)
+  const branches = [
+    { name: "মাননীয় মন্ত্রীর দপ্তর", code: "MIN_OFFICE", location: "প্রধান ভবন", roomNumber: "১ম তলা" },
+    { name: "মাননীয় প্রতিমন্ত্রীর দপ্তর", code: "S_MIN_OFFICE", location: "প্রধান ভবন", roomNumber: "২য় তলা" },
+    { name: "সচিবের দপ্তর", code: "SEC_OFFICE", location: "প্রধান ভবন", roomNumber: "৩য় তলা" },
+    { name: "প্রশাসন অনুবিভাগ", code: "ADMIN_WING", location: "অ্যানেক্স ভবন", roomNumber: "১ম তলা" },
+    { name: "পরিষদ অনুবিভাগ", code: "COUNCIL_WING", location: "অ্যানেক্স ভবন", roomNumber: "২য় তলা" },
+    { name: "উন্নয়ন অনুবিভাগ", code: "DEV_WING", location: "অ্যানেক্স ভবন", roomNumber: "৩য় তলা" },
+    { name: "পরিষদ-১ শাখা", code: "COUNCIL_1", location: "অ্যানেক্স ভবন", roomNumber: "২০৫" },
+    { name: "প্রশাসন-১ শাখা", code: "ADMIN_1", location: "অ্যানেক্স ভবন", roomNumber: "১০১" },
+    { name: "বাজেট/প্র-২", code: "BUDGET_PR2", location: "অ্যানেক্স ভবন", roomNumber: "১০৫" },
+    { name: "উন্নয়ন অধিশাখা", code: "DEV_SUB_WING", location: "অ্যানেক্স ভবন", roomNumber: "৩০১" },
+    { name: "উন্নয়ন শাখা", code: "DEV_SEC", location: "অ্যানেক্স ভবন", roomNumber: "৩০৩" },
+  ];
+
+  const branchIds: number[] = [];
+  for (const b of branches) {
+    const created = await prisma.branch.upsert({
+      where: { code: b.code },
+      update: { name: b.name, location: b.location, roomNumber: b.roomNumber },
+      create: { ...b, status: "Active" },
+    });
+    branchIds.push(created.id);
+  }
 
   // ৪. অফিসার (Officers) 
   const officersData = [
-    { name: "মোঃ রহিম আহমেদ", designation: "সহকারী ব্যবস্থাপক", department: "অপারেশনস", email: "rahim@example.com", branchId: b1.id },
-    { name: "করিম উল্লাহ", designation: "হিসাবরক্ষণ কর্মকর্তা", department: "ফিন্যান্স", email: "karim@example.com", branchId: b1.id },
-    { name: "নাসরিন সুলতানা", designation: "সিনিয়র সিস্টেম অ্যানালিস্ট", department: "আইসিটি", email: "nasrin@example.com", branchId: b2.id },
-    { name: "আরিফুল ইসলাম", designation: "প্রোগ্রামার", department: "আইসিটি", email: "ariful@example.com", branchId: b2.id },
-    { name: "ফাতেমা জোহরা", designation: "ডেপুটি ডিরেক্টর", department: "প্রশাসন", email: "fatema@example.com", branchId: b1.id },
-    { name: "সাকিব আল হাসান", designation: "অ্যাসিস্ট্যান্ট ডিরেক্টর", department: "এইচআর", email: "sakib@example.com", branchId: b3.id },
-    { name: "কামরুল হাসান", designation: "সেকশন অফিসার", department: "জেনারেল সার্ভিস", email: "kamrul@example.com", branchId: b3.id },
-    { name: "লুৎফুর রহমান", designation: "টেকনিক্যাল পার্সোনাল", department: "আইসিটি", email: "lutfur@example.com", branchId: b2.id },
-    { name: "শারমিন আক্তার", designation: "অফিস সহকারী", department: "প্রশাসন", email: "sharmin@example.com", branchId: b1.id },
-    { name: "তামিম ইকবাল", designation: "মার্কেটিং অফিসার", department: "অপারেশনস", email: "tamim@example.com", branchId: b1.id },
-    { name: "মুশফিকুর রহিম", designation: "ডেটা এন্ট্রি অপারেটর", department: "আইসিটি", email: "mushfiq@example.com", branchId: b2.id },
-    { name: "মাহমুদুল্লাহ রিয়াদ", designation: "নিরাপত্তা ইনচার্জ", department: "প্রশাসন", email: "mahmudullah@example.com", branchId: b1.id },
+    { name: "মোঃ রহিম আহমেদ", designation: "সহকারী ব্যবস্থাপক", email: "rahim@example.com", branchId: branchIds[0], photoUrl: "https://xsgames.co/randomusers/assets/avatars/male/1.jpg" },
+    { name: "করিম উল্লাহ", designation: "হিসাবরক্ষণ কর্মকর্তা", email: "karim@example.com", branchId: branchIds[8], photoUrl: "https://xsgames.co/randomusers/assets/avatars/male/2.jpg" },
+    { name: "নাসরিন সুলতানা", designation: "সসিস্টেম অ্যানালিস্ট", email: "nasrin@example.com", branchId: branchIds[3], photoUrl: "https://xsgames.co/randomusers/assets/avatars/female/1.jpg" },
+    { name: "আরিফুল ইসলাম", designation: "প্রোগ্রামার", email: "ariful@example.com", branchId: branchIds[7], photoUrl: "https://xsgames.co/randomusers/assets/avatars/male/3.jpg" },
+    { name: "ফাতেমা জোহরা", designation: "ডেপুটি ডিরেক্টর", email: "fatema@example.com", branchId: branchIds[1], photoUrl: "https://xsgames.co/randomusers/assets/avatars/female/2.jpg" },
+    { name: "সাকিব আল হাসান", designation: "ডিরেক্টর", email: "sakib@example.com", branchId: branchIds[4], photoUrl: "https://xsgames.co/randomusers/assets/avatars/male/4.jpg" },
   ];
 
-  console.log(`${officersData.length} জন অফিসারের তথ্য সিড করা হচ্ছে...`);
-
-  // Use create instead of upsert if email is not unique in schema
   for (const off of officersData) {
     const existing = await prisma.officer.findFirst({ where: { email: off.email } });
-    if (!existing) {
-      await prisma.officer.create({ data: off });
-    } else {
+    if (existing) {
       await prisma.officer.update({ where: { id: existing.id }, data: off });
+    } else {
+      await prisma.officer.create({ data: off });
     }
   }
 
   const allOfficers = await prisma.officer.findMany();
 
-  // ৫. মালামাল (Assets)
-  await prisma.asset.upsert({
-    where: { assetTag: "AST-LPT-২০১" },
-    update: {},
-    create: {
-      assetTag: "AST-LPT-২০১",
-      categoryId: lpt.id,
-      branchId: b1.id,
-      brand: "Dell",
-      serialNumber: "SN-LPT-২০১",
-      status: "Available" as AssetStatus,
-      locationDetails: "অ্যাডমিন ডেস্ক-৫",
-    },
-  });
+  // ৫. অতিরিক্ত ২০+ এসেট তৈরি (Assets)
+  const brands = ["Dell", "HP", "Lenovo", "Apple", "Samsung", "Asus", "Epson", "Canon", "LG"];
+  const models: any = {
+    LPT: ["Latitude 5420", "EliteBook 840", "ThinkPad X1", "MacBook Air", "ZenBook"],
+    MON: ["UltraSharp 24", "Curved 27", "ProDisplay 32", "Gaming 144Hz"],
+    PRN: ["L3210 EcoTank", "LaserJet Pro", "ImageClass", "Pixma"],
+    DSK: ["Optiplex 7080", "ProDesk 600", "ThinkCentre M70"],
+    SCN: ["ScanJet Pro", "CanoScan", "Epson Perfection"],
+    PRJ: ["EB-X06", "ViewSonic PA503X", "BenQ MS560"],
+    UPS: ["APC Smart-UPS", "Luminous 1kVA", "CyberPower"],
+  };
 
-  const a2 = await prisma.asset.upsert({
-    where: { assetTag: "AST-LPT-২০২" },
-    update: {},
-    create: {
-      assetTag: "AST-LPT-২০২",
-      categoryId: lpt.id,
-      branchId: b2.id,
-      currentOfficerId: allOfficers.find(o => o.email === "nasrin@example.com")?.id,
-      brand: "HP",
-      serialNumber: "SN-LPT-২০২",
-      status: "Assigned" as AssetStatus,
-      locationDetails: "আইসিটি ল্যাব",
-    },
-  });
+  const statuses: AssetStatus[] = [AssetStatus.Available, AssetStatus.Assigned, AssetStatus.Under_Repair, AssetStatus.Available];
+  const sources: PurchaseSource[] = [PurchaseSource.Budget, PurchaseSource.Admin_2, PurchaseSource.Others];
 
-  console.log("সব তথ্য সফলভাবে সিড করা হয়েছে!");
+  console.log("২০টি ডেমো এসেট তৈরি করা হচ্ছে...");
+  
+  for (let i = 1; i <= 20; i++) {
+    const catCodes = Object.keys(catMap);
+    const randomCatCode = catCodes[Math.floor(Math.random() * catCodes.length)];
+    const brand = brands[Math.floor(Math.random() * brands.length)];
+    const modelList = models[randomCatCode];
+    const model = modelList[Math.floor(Math.random() * modelList.length)];
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
+    const source = sources[Math.floor(Math.random() * sources.length)];
+    const randomBranchId = branchIds[Math.floor(Math.random() * branchIds.length)];
+    
+    let currentOfficerId = null;
+    if (status === AssetStatus.Assigned) {
+      currentOfficerId = allOfficers[Math.floor(Math.random() * allOfficers.length)].id;
+    }
+
+    const assetTag = `ICT-2026-${String(i).padStart(3, '0')}`;
+    
+    await prisma.asset.upsert({
+      where: { assetTag },
+      update: {
+        status,
+        currentOfficerId,
+        branchId: randomBranchId,
+      },
+      create: {
+        assetTag,
+        brand,
+        model,
+        serialNumber: `SN-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+        categoryId: catMap[randomCatCode],
+        branchId: randomBranchId,
+        currentOfficerId,
+        status,
+        purchaseSource: source,
+        purchaseDate: new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
+        locationDetails: "সচিবালয় ভবন",
+      }
+    });
+  }
+
+  console.log("ডেটা সিডিং সম্পন্ন হয়েছে।");
 }
 
 main()
@@ -148,4 +156,6 @@ main()
     console.error(e);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

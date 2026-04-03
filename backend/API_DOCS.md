@@ -147,7 +147,48 @@ Base URL: `http://localhost:3000/api`
 
 - **Endpoint:** `PATCH /officers/:id`
 - **Request (Multipart/form-data):**
-  - `name`: Rahim Ahmed
+  - একই ভাবে (Create Officer এর মত) `name`, `designation`, `branchId` ইত্যাদি ডেটা এবং ছবি আপলোড বা লিংক পাঠানো যাবে।
+
+#### 4. Get Officer Details (Profile)
+
+- **Endpoint:** `GET /officers/:id`
+- **Description:** অফিসারের বিস্তারিত প্রোফাইল এবং তার বরাদ্দকৃত সম্পদের তালিকা।
+- **Response (200 OK):**
+  ```json
+  {
+    "id": 1,
+    "name": "রাহিম আহমেদ",
+    "designation": "সহকারী প্রোগ্রামার",
+    "phone": "017XXXXXXXX",
+    "email": "rahim@example.com",
+    "photoUrl": "/uploads/officers/1712134567.jpg",
+    "isActive": true,
+    "createdAt": "2024-03-20T10:00:00.000Z",
+    "branch": {
+      "id": 1,
+      "name": "আইসিটি বিভাগ"
+    },
+    "assignments": [
+      {
+        "id": 101,
+        "issueDate": "2024-03-21T00:00:00.000Z",
+        "asset": {
+          "id": 501,
+          "assetTag": "AST-LPT-001",
+          "brand": "Dell",
+          "model": "Latitude 5420",
+          "imageUrl": "https://picsum.photos/200/200",
+          "category": {
+            "id": 5,
+            "name": "Laptop"
+          }
+        }
+      }
+    ]
+  }
+  ```
+
+---
   - `designation`: Assistant Manager
   - `department`: IT
   - `phone`: 017XXXXXXXX

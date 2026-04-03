@@ -5,10 +5,37 @@ export const getAssets = async (req: Request, res: Response): Promise<void> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.search as string;
+    const categoryId = req.query.categoryId as string;
+    const status = req.query.status as string;
     const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (search) {
+      where.OR = [
+        { assetTag: { contains: search } },
+        { brand: { contains: search } },
+        { model: { contains: search } },
+        { serialNumber: { contains: search } },
+        { locationDetails: { contains: search } },
+        { category: { name: { contains: search } } },
+        { branch: { name: { contains: search } } },
+        { currentOfficer: { name: { contains: search } } },
+      ];
+    }
+
+    if (categoryId) {
+      where.categoryId = parseInt(categoryId);
+    }
+
+    if (status) {
+      where.status = status;
+    }
 
     const [assets, total] = await Promise.all([
       prisma.asset.findMany({
+        where,
         skip,
         take: limit,
         include: {
@@ -23,7 +50,7 @@ export const getAssets = async (req: Request, res: Response): Promise<void> => {
           id: 'desc',
         } as any,
       }),
-      prisma.asset.count(),
+      prisma.asset.count({ where }),
     ]);
 
     res.status(200).json({
