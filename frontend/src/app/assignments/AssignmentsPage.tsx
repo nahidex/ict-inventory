@@ -1,82 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { MaterialIcon } from '../../components/atoms/Icons';
-
-const mockAssignments = [
-  {
-    "id": 30,
-    "assetId": 100,
-    "officerId": 50,
-    "issueDate": "2026-04-01T00:00:00.000Z",
-    "actualReturnDate": null,
-    "returnCondition": null,
-    "returnImageUrl": null,
-    "comments": null,
-    "issuedBy": "Admin",
-    "asset": {
-      "id": 100,
-      "categoryId": 72,
-      "assetTag": "OFF-DEL-01",
-      "brand": "Dell",
-      "model": "Latitude 5420",
-      "serialNumber": "SN-12345",
-      "purchaseDate": "2025-01-10",
-      "purchaseSource": "Budget",
-      "initialImageUrl": null,
-      "status": "Assigned"
-    },
-    "officer": {
-      "id": 50,
-      "name": "Assigned Officer",
-      "designation": "সিস্টেম অ্যানালিস্ট",
-      "department": "আইসিটি শাখা",
-      "phone": "01712345678",
-      "email": "officer@example.gov.bd",
-      "photoUrl": null,
-      "isActive": true,
-      "createdAt": "2026-04-01T09:40:20.731Z"
-    }
-  },
-  {
-    "id": 31,
-    "assetId": 101,
-    "officerId": 51,
-    "issueDate": "2026-03-15T00:00:00.000Z",
-    "actualReturnDate": "2026-03-25T10:00:00.000Z",
-    "returnCondition": "Good",
-    "returnImageUrl": null,
-    "comments": "Returned on time",
-    "issuedBy": "Admin",
-    "asset": {
-      "id": 101,
-      "categoryId": 72,
-      "assetTag": "PRN-HP-05",
-      "brand": "HP",
-      "model": "LaserJet Pro",
-      "serialNumber": "SN-67890",
-      "purchaseDate": "2024-11-05",
-      "purchaseSource": "Project",
-      "initialImageUrl": null,
-      "status": "Available"
-    },
-    "officer": {
-      "id": 51,
-      "name": "Sultana Razia",
-      "designation": "প্রোগ্রামার",
-      "department": "প্রশাসন শাখা",
-      "phone": "01812345679",
-      "email": "razia@example.gov.bd",
-      "photoUrl": "https://picsum.photos/seed/officer2/100/100",
-      "isActive": true,
-      "createdAt": "2026-03-10T09:00:00.000Z"
-    }
-  }
-];
+import { assignmentService, Assignment } from '../../services/assignment.service';
 
 export default function AssignmentsPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAssignments = async () => {
+      try {
+        setIsLoading(true);
+        const data = await assignmentService.getAll();
+        setAssignments(data);
+      } catch (error) {
+        console.error('Failed to fetch assignments:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchAssignments();
+  }, []);
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '---';
@@ -88,8 +35,14 @@ export default function AssignmentsPage() {
   };
 
   const getInitials = (name: string) => {
+    if (!name) return '';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
+
+  const filteredAssignments = assignments.filter(item => 
+    item.asset.assetTag.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.officer.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -103,6 +56,7 @@ export default function AssignmentsPage() {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            onClick={() => navigate('/assignments/issue')}
             className="flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-full font-bold shadow-lg shadow-primary/20 transition-all"
           >
             <MaterialIcon name="add_task" size={20} />
@@ -136,7 +90,7 @@ export default function AssignmentsPage() {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden"
+        className="bg-surface-container-lowest rounded-2xl border border-outline-variant overflow-hidden shadow-sm"
       >
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -151,83 +105,109 @@ export default function AssignmentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-variant">
-              {mockAssignments.map((item, index) => (
-                <motion.tr 
-                  key={item.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="hover:bg-surface-container-low/50 transition-colors group cursor-pointer"
-                  onClick={() => navigate(`/assignments/${item.id}`)}
-                >
-                  <td className="px-4 md:px-8 py-3 md:py-4">
-                    <div className="flex items-center gap-2 md:gap-3">
-                      <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-secondary-container flex items-center justify-center text-secondary">
-                        <MaterialIcon name="devices" size={16} />
-                      </div>
-                      <div>
-                        <div className="font-bold text-on-surface text-xs md:text-sm">{item.asset.assetTag}</div>
-                        <div className="text-[9px] md:text-[10px] text-on-surface-variant font-medium uppercase tracking-wider">
-                          {item.asset.brand} {item.asset.model}
+              {isLoading ? (
+                <tr>
+                  <td colSpan={6} className="px-8 py-20 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                      <span className="text-sm font-bold text-on-surface-variant">লোড হচ্ছে...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : filteredAssignments.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-8 py-20 text-center">
+                    <div className="flex flex-col items-center gap-3 text-on-surface-variant/40">
+                      <MaterialIcon name="assignment_late" size={48} />
+                      <span className="text-sm font-bold">কোনো অ্যাসাইনমেন্ট পাওয়া যায়নি</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                filteredAssignments.map((item, index) => (
+                  <motion.tr 
+                    key={item.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="hover:bg-surface-container-low/50 transition-colors group cursor-pointer"
+                    onClick={() => navigate(`/assignments/${item.id}`)}
+                  >
+                    <td className="px-4 md:px-8 py-3 md:py-4">
+                      <div className="flex items-center gap-2 md:gap-3">
+                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-secondary-container flex items-center justify-center text-secondary shadow-sm">
+                          <MaterialIcon name="devices" size={16} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-on-surface text-xs md:text-sm tracking-tight">{item.asset.assetTag}</div>
+                          <div className="text-[9px] md:text-[10px] text-on-surface-variant font-medium uppercase tracking-wider">
+                            {item.asset.brand} {item.asset.model}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-3 md:px-6 py-3 md:py-4">
-                    <div className="flex items-center gap-2 md:gap-3">
-                      <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-primary-container flex items-center justify-center text-[8px] md:text-[10px] font-black text-primary border border-primary/10 overflow-hidden">
-                        {item.officer.photoUrl ? (
-                          <img src={item.officer.photoUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                        ) : (
-                          getInitials(item.officer.name)
-                        )}
+                    </td>
+                    <td className="px-3 md:px-6 py-3 md:py-4">
+                      <div className="flex items-center gap-2 md:gap-3">
+                        <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-primary-container flex items-center justify-center text-[8px] md:text-[10px] font-black text-primary border border-primary/10 overflow-hidden shadow-sm">
+                          {item.officer.photoUrl ? (
+                            <img src={item.officer.photoUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          ) : (
+                            getInitials(item.officer.name)
+                          )}
+                        </div>
+                        <div>
+                          <div className="text-xs md:text-sm font-bold text-on-surface tracking-tight">{item.officer.name}</div>
+                          <div className="hidden md:block text-[10px] text-on-surface-variant font-medium">{item.officer.designation}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs md:text-sm font-bold text-on-surface">{item.officer.name}</div>
-                        <div className="hidden md:block text-[10px] text-on-surface-variant font-medium">{item.officer.designation}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-3 md:px-6 py-3 md:py-4">
-                    <div className="text-xs md:text-sm font-medium text-on-surface">{formatDate(item.issueDate)}</div>
-                    <div className="hidden md:block text-[10px] text-on-surface-variant uppercase tracking-wider">ইস্যু করেছেন: {item.issuedBy || 'N/A'}</div>
-                  </td>
-                  <td className="hidden lg:table-cell px-6 py-4">
-                    <div className="text-sm font-medium text-on-surface">{formatDate(item.actualReturnDate)}</div>
-                    {item.returnCondition && (
-                      <div className="text-[10px] text-on-surface-variant uppercase tracking-wider">অবস্থা: {item.returnCondition}</div>
-                    )}
-                  </td>
-                  <td className="px-3 md:px-6 py-3 md:py-4">
-                    <span className={`inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[10px] md:text-[11px] font-bold ring-1 ring-inset ${
-                      !item.actualReturnDate 
-                        ? 'bg-amber-100 text-amber-800 ring-amber-600/20' 
-                        : 'bg-green-100 text-green-800 ring-green-600/20'
-                    }`}>
-                      <span className={`w-1 md:w-1.5 h-1 md:h-1.5 rounded-full ${!item.actualReturnDate ? 'bg-amber-600' : 'bg-green-600'}`}></span>
-                      {!item.actualReturnDate ? 'ইস্যুকৃত' : 'ফেরতকৃত'}
-                    </span>
-                  </td>
-                  <td className="px-4 md:px-8 py-3 md:py-4 text-right">
-                    {!item.actualReturnDate ? (
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/assignments/return/${item.id}`);
-                        }}
-                        className="text-[10px] md:text-xs font-bold text-primary hover:bg-primary/10 px-2 md:px-4 py-1.5 md:py-2 rounded-full transition-colors flex items-center gap-1 ml-auto"
-                      >
-                        <MaterialIcon name="assignment_return" size={14} />
-                        ফেরত
-                      </button>
-                    ) : (
-                      <button className="p-1.5 md:p-2 hover:bg-surface-container-high rounded-full text-on-surface-variant transition-colors" title="বিস্তারিত">
-                        <MaterialIcon name="visibility" size={16} />
-                      </button>
-                    )}
-                  </td>
-                </motion.tr>
-              ))}
+                    </td>
+                    <td className="px-3 md:px-6 py-3 md:py-4">
+                      <div className="text-xs md:text-sm font-medium text-on-surface">{formatDate(item.issueDate)}</div>
+                      <div className="hidden md:block text-[10px] text-on-surface-variant uppercase tracking-wider">সিস্টেম জেনারেটেড</div>
+                    </td>
+                    <td className="hidden lg:table-cell px-6 py-4">
+                      <div className="text-sm font-medium text-on-surface">{formatDate(item.actualReturnDate)}</div>
+                      {item.returnCondition && (
+                        <div className="text-[10px] text-on-surface-variant uppercase tracking-wider">অবস্থা: {item.returnCondition}</div>
+                      )}
+                    </td>
+                    <td className="px-3 md:px-6 py-3 md:py-4">
+                      <span className={`inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[10px] md:text-[11px] font-bold ring-1 ring-inset ${
+                        !item.actualReturnDate 
+                          ? 'bg-amber-100 text-amber-800 ring-amber-600/20 shadow-sm' 
+                          : 'bg-green-100 text-green-800 ring-green-600/20 shadow-sm'
+                      }`}>
+                        <span className={`w-1 md:w-1.5 h-1 md:h-1.5 rounded-full ${!item.actualReturnDate ? 'bg-amber-600' : 'bg-green-600'}`}></span>
+                        {!item.actualReturnDate ? 'ইস্যুকৃত' : 'ফেরতকৃত'}
+                      </span>
+                    </td>
+                    <td className="px-4 md:px-8 py-3 md:py-4 text-right">
+                      {!item.actualReturnDate ? (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/assignments/return/${item.id}`);
+                          }}
+                          className="text-[10px] md:text-xs font-bold text-primary hover:bg-primary/10 px-2 md:px-4 py-1.5 md:py-2 rounded-full transition-colors flex items-center gap-1 ml-auto border border-primary/20 shadow-sm"
+                        >
+                          <MaterialIcon name="assignment_return" size={14} />
+                          ফেরত
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/assignments/${item.id}`);
+                          }}
+                          className="p-1.5 md:p-2 hover:bg-surface-container-high rounded-full text-on-surface-variant transition-colors" title="বিস্তারিত"
+                        >
+                          <MaterialIcon name="visibility" size={16} />
+                        </button>
+                      )}
+                    </td>
+                  </motion.tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -235,3 +215,4 @@ export default function AssignmentsPage() {
     </div>
   );
 }
+

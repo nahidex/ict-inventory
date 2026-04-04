@@ -10,6 +10,7 @@ import DashboardPage from './app/DashboardPage';
 import InventoryPage from './app/inventory/InventoryPage';
 import AssetDetailPage from './app/inventory/AssetDetailPage';
 import AddAssetPage from './app/inventory/AddAssetPage';
+import EditAssetPage from './app/inventory/edit/EditAssetPage';
 import OfficersPage from './app/officers/OfficersPage';
 import AddOfficerPage from './app/officers/AddOfficerPage';
 import OfficerDetailPage from './app/officers/OfficerDetailPage';
@@ -38,6 +39,7 @@ export default function App() {
         {/* Protected Routes */}
         <Route path="/" element={<ProtectedRoutes><DashboardPage /></ProtectedRoutes>} />
         <Route path="/inventory" element={<ProtectedRoutes><InventoryPage /></ProtectedRoutes>} />
+        <Route path="/inventory/edit/:id" element={<ProtectedRoutes><EditAssetPage /></ProtectedRoutes>} />
         <Route path="/inventory/add" element={<ProtectedRoutes><AddAssetPage /></ProtectedRoutes>} />
         <Route path="/inventory/:id" element={<ProtectedRoutes><AssetDetailPage /></ProtectedRoutes>} />
         <Route path="/branches" element={<ProtectedRoutes><BranchPage /></ProtectedRoutes>} />

@@ -24,7 +24,7 @@ export default function InventoryPage() {
       }
     };
     fetchStats();
-  }, []);
+  }, []); // Empty dependency array means it only runs once on mount
 
   return (
     <div className="space-y-6">

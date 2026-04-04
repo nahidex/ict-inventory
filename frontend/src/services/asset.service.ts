@@ -37,6 +37,20 @@ export interface AssetListResponse {
   };
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const UPLOADS_BASE_URL = API_BASE_URL.replace('/api', '');
+
+interface RawAsset extends Omit<Asset, 'initialImageUrl' | 'imageUrl'> {
+  initialImageUrl?: string | null;
+  imageUrl?: string | null;
+}
+
+const mapAssetImages = (asset: RawAsset): Asset => ({
+  ...asset,
+  initialImageUrl: asset.initialImageUrl ? (asset.initialImageUrl.startsWith('http') ? asset.initialImageUrl : `${UPLOADS_BASE_URL}${asset.initialImageUrl}`) : null,
+  imageUrl: asset.imageUrl ? (asset.imageUrl.startsWith('http') ? asset.imageUrl : `${UPLOADS_BASE_URL}${asset.imageUrl}`) : null,
+});
+
 export const assetService = {
   getAll: async (page = 1, limit = 10, search = '', categoryId = '', status = ''): Promise<AssetListResponse> => {
     let url = `/assets?page=${page}&limit=${limit}`;
@@ -50,12 +64,16 @@ export const assetService = {
       url += `&status=${status}`;
     }
     const response = await apiClient.get(url);
-    return response.data;
+    const data = response.data;
+    return {
+      ...data,
+      data: data.data.map(mapAssetImages)
+    };
   },
 
   getById: async (id: number | string): Promise<Asset> => {
     const response = await apiClient.get(`/assets/${id}`);
-    return response.data;
+    return mapAssetImages(response.data);
   },
 
   create: async (formData: FormData): Promise<Asset> => {

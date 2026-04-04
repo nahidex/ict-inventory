@@ -51,10 +51,19 @@ export default function AssetDetailPage() {
         >
           <MaterialIcon name="arrow_back" size={24} className="group-hover:-translate-x-1 transition-transform" />
         </motion.button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-black text-primary tracking-tight font-sans">সম্পদ বিস্তারিত</h1>
           <p className="text-sm text-on-surface-variant font-medium">সম্পদ আইডি: {asset?.assetTag || 'N/A'}</p>
         </div>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate(`/inventory/edit/${id}`)}
+          className="flex items-center gap-2 px-6 py-3 bg-secondary-container text-on-secondary-container rounded-2xl font-black text-sm shadow-sm hover:shadow-md transition-all border border-on-secondary-container/10"
+        >
+          <MaterialIcon name="edit" size={20} />
+          এডিট করুন
+        </motion.button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -69,16 +78,27 @@ export default function AssetDetailPage() {
             <div className="p-8">
               <div className="flex flex-col md:flex-row gap-8">
                 {/* Image Section */}
-                <div className="w-full md:w-64 h-64 rounded-2xl bg-surface-container-high overflow-hidden border border-outline-variant flex-shrink-0 flex items-center justify-center">
+                <div className="w-full md:w-64 h-64 rounded-2xl bg-surface-container-high overflow-hidden border border-outline-variant flex-shrink-0 flex items-center justify-center relative group">
                   {asset?.imageUrl || asset?.initialImageUrl ? (
-                    <img 
-                      src={asset.imageUrl || asset.initialImageUrl || ''} 
-                      alt={asset?.model || ''} 
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
+                    <>
+                      <img 
+                        src={asset.imageUrl || asset.initialImageUrl || ''} 
+                        alt={asset?.model || ''} 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        crossOrigin="anonymous"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = 'https://placehold.co/600x600/f3f4f6/6b7280?text=Image+Not+Found';
+                          target.onerror = null;
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    </>
                   ) : (
-                    <MaterialIcon name="devices" size={64} className="text-on-surface-variant/20" />
+                    <div className="flex flex-col items-center gap-2">
+                       <MaterialIcon name="devices" size={64} className="text-on-surface-variant/20" />
+                       <span className="text-[10px] font-bold text-on-surface-variant/40 uppercase tracking-widest">No Image</span>
+                    </div>
                   )}
                 </div>
 
@@ -94,7 +114,7 @@ export default function AssetDetailPage() {
                       </h2>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      {asset?.status === 'Available' && <Badge label="উপলব্ধ" variant="primary" showDot />}
+                      {asset?.status === 'Available' && <Badge label="বরাদ্দযোগ্য" variant="primary" showDot />}
                       {asset?.status === 'Assigned' && <Badge label="বরাদ্দ" variant="success" showDot />}
                       {asset?.status === 'Under_Repair' && <Badge label="মেরামতে" variant="warning" showDot />}
                       {asset?.status === 'Disposed' && <Badge label="অকেজো" variant="error" showDot />}
@@ -195,46 +215,72 @@ export default function AssetDetailPage() {
           </motion.div>
 
           {/* History / Timeline */}
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-surface-container-lowest rounded-3xl border border-outline-variant p-8"
-          >
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-black text-on-surface tracking-tight">অ্যাক্টিভিটি হিস্ট্রি</h3>
-              <MaterialIcon name="history" size={24} className="text-primary" />
-            </div>
-            
-            <div className="space-y-6">
-              {asset?.activityLogs && asset.activityLogs.length > 0 ? (
-                asset.activityLogs.map((log: any, idx) => (
-                  <div key={log.id} className="relative pl-8 pb-2">
-                    {/* Timeline Line */}
-                    {idx !== asset.activityLogs.length - 1 && (
-                      <div className="absolute left-3 top-6 bottom-0 w-0.5 bg-outline-variant/30"></div>
-                    )}
-                    {/* Timeline Dot */}
-                    <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full bg-surface-container-high border-2 border-outline-variant flex items-center justify-center z-10 group-hover:border-primary transition-colors">
-                      <div className={`w-2 h-2 rounded-full ${log.actionType === 'REGISTRATION' ? 'bg-primary' : log.actionType === 'ASSIGNMENT' ? 'bg-success' : 'bg-warning'}`}></div>
+          <div className="space-y-6">
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-surface-container-lowest rounded-3xl border border-outline-variant p-8 h-full"
+            >
+              <h3 className="text-lg font-bold text-on-surface mb-8 flex items-center gap-2">
+                <MaterialIcon name="history" className="text-primary" size={20} />
+                অ্যাসেট টাইমলাইন
+              </h3>
+              
+              <div className="relative space-y-8 before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[2px] before:bg-outline-variant">
+                {asset?.activityLogs && asset.activityLogs.length > 0 ? (
+                  [...asset.activityLogs].reverse().map((event: any) => (
+                    <div key={event.id} className="relative pl-10">
+                      {/* Timeline Dot */}
+                      <div className={`absolute left-0 top-1 w-8 h-8 rounded-full flex items-center justify-center z-10 shadow-sm ${
+                        event.actionType === 'বরাদ্দ প্রদান' || event.actionType === 'ASSIGNMENT' ? 'bg-primary text-on-primary' :
+                        event.actionType === 'ফেরত গ্রহণ' || event.actionType === 'RETURN' ? 'bg-emerald-500 text-white' :
+                        event.actionType === 'হস্তান্তর' ? 'bg-orange-500 text-white' :
+                        event.actionType === 'শাখা বদলি' ? 'bg-indigo-500 text-white' :
+                        'bg-tertiary text-on-tertiary'
+                      }`}>
+                        <MaterialIcon name={
+                          (event.actionType === 'বরাদ্দ প্রদান' || event.actionType === 'ASSIGNMENT') ? 'person_add' :
+                          (event.actionType === 'ফেরত গ্রহণ' || event.actionType === 'RETURN') ? 'assignment_return' : 
+                          event.actionType === 'হস্তান্তর' ? 'swap_horiz' :
+                          event.actionType === 'শাখা বদলি' ? 'transfer_within_a_station' :
+                          'app_registration'
+                        } size={16} />
+                      </div>
+                      
+                      {/* Event Content */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-start">
+                          <p className="text-sm font-black text-on-surface leading-none uppercase tracking-tight">
+                            {event.actionType}
+                          </p>
+                          <span className="text-[10px] font-bold text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded-md">
+                            {new Date(event.performedAt).toLocaleString('bn-BD', {
+                              dateStyle: 'medium',
+                              timeStyle: 'short'
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-on-surface-variant font-medium leading-relaxed">
+                          {event.description}
+                        </p>
+                        <div className="flex items-center gap-1 pt-1">
+                          <MaterialIcon name="person_outline" size={12} className="text-on-surface-variant" />
+                          <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
+                            By: Admin
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    
-                    <div>
-                      <p className="text-xs font-black text-on-surface-variant/40 mb-1 uppercase tracking-wider">
-                        {new Date(log.performedAt).toLocaleDateString('en-GB')}
-                      </p>
-                      <h5 className="text-[15px] font-black text-on-surface leading-snug">{log.description}</h5>
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-10 opacity-30">
+                    <MaterialIcon name="event_note" size={48} className="mx-auto mb-2" />
+                    <p className="font-bold text-sm">কোনো হিস্ট্রি পাওয়া যায়নি</p>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-10 opacity-30">
-                  <MaterialIcon name="event_note" size={48} className="mx-auto mb-2" />
-                  <p className="font-bold text-sm">কোনো হিস্ট্রি পাওয়া যায়নি</p>
-                </div>
-              )}
-            </div>
-          </motion.div>
+                )}
+              </div>
+            </motion.div>
+          </div>
         </div>
       </div>
     </div>

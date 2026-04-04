@@ -23,16 +23,14 @@ export default function AddOfficerPage() {
   });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [isLoading, setIsLoading] = useState(isEditMode);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [toast, setToast] = useState({ isOpen: false, message: '', type: 'success' as 'success' | 'error' });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        if (isEditMode) {
-          setIsLoading(true);
-        }
-        
+        setIsLoading(true);
         // Always fetch branches
         const branchesData = await branchService.getAll();
         setBranches(branchesData);
@@ -91,32 +89,59 @@ export default function AddOfficerPage() {
     setFormData(prev => ({ ...prev, photoUrl: '' }));
   };
 
+  const isBase64 = (str: string) => {
+    return str.startsWith('data:image/');
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    console.log('Submitting officer data...', formData);
     try {
+      if (!formData.name.trim()) {
+        setToast({ isOpen: true, message: 'অফিসারের নাম প্রদান করা আবশ্যক।', type: 'error' });
+        return;
+      }
+
+      setIsSubmitLoading(true);
       const data = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        // Skip photoUrl if we are uploading a file to avoid confusion, 
-        // unless we want to send it as fallback string
-        if (key === 'photoUrl' && photoFile) return; 
-        data.append(key, value.toString());
+        // Skip photoUrl if it's base64 (local preview) OR if we have a new file to upload
+        if (key === 'photoUrl') {
+          if (isBase64(value as string) || photoFile) {
+            return;
+          }
+        }
+        
+        // Ensure name is added to FormData
+        if (value !== null && value !== undefined) {
+          data.append(key, value.toString());
+        }
       });
       
       if (photoFile) {
         data.append('photo', photoFile);
       }
 
+      console.log('Final FormData before API call:', Array.from(data.entries()));
+
       if (isEditMode) {
-        await officerService.update(id!, data);
+        const result = await officerService.update(id!, data);
+        console.log('Update result:', result);
         setToast({ isOpen: true, message: 'অফিসারের তথ্য সফলভাবে আপডেট করা হয়েছে!', type: 'success' });
       } else {
-        await officerService.create(data);
+        const result = await officerService.create(data);
+        console.log('Create result:', result);
         setToast({ isOpen: true, message: 'অফিসার সফলভাবে যোগ করা হয়েছে!', type: 'success' });
       }
       setTimeout(() => navigate('/officers'), 1500);
-    } catch (error) {
-      console.error('Failed to save officer:', error);
-      setToast({ isOpen: true, message: 'তথ্য সংরক্ষণ করতে সমস্যা হয়েছে।', type: 'error' });
+    } catch (error: any) {
+      setIsSubmitLoading(false);
+      console.error('Failed to save officer detailed error:', error);
+      setToast({ 
+        isOpen: true, 
+        message: error.response?.data?.message || 'তথ্য সংরক্ষণ করতে সমস্যা হয়েছে।', 
+        type: 'error' 
+      });
     }
   };
 
@@ -158,10 +183,11 @@ export default function AddOfficerPage() {
               <div className="w-full h-full flex items-center justify-center bg-primary-container text-primary font-black text-4xl">
                 {formData.photoUrl ? (
                   <img 
-                    src={formData.photoUrl.startsWith('data:') ? formData.photoUrl : (formData.photoUrl.startsWith('http') ? formData.photoUrl : `http://localhost:5000${formData.photoUrl}`)} 
+                    src={formData.photoUrl} 
                     alt="Preview" 
                     className="w-full h-full object-cover" 
-                    referrerPolicy="no-referrer" 
+                    // Remove crossOrigin for local data: URIs as it can cause issues with some browsers
+                    {...(!formData.photoUrl.startsWith('data:') ? { crossOrigin: "anonymous" } : {})}
                   />
                 ) : (
                   getInitials(formData.name) || <MaterialIcon name="person" size={64} />
@@ -335,19 +361,25 @@ export default function AddOfficerPage() {
             <div className="flex items-center justify-end gap-4 pt-4">
               <button
                 type="button"
+                disabled={isSubmitLoading}
                 onClick={() => navigate('/officers')}
-                className="px-8 py-3 rounded-full font-bold text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                className="px-8 py-3 rounded-full font-bold text-on-surface-variant hover:bg-surface-container-high transition-colors disabled:opacity-50"
               >
                 বাতিল করুন
               </button>
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={{ scale: isSubmitLoading ? 1 : 1.02 }}
+                whileTap={{ scale: isSubmitLoading ? 1 : 0.98 }}
                 type="submit"
-                className="px-10 py-3 bg-primary text-on-primary rounded-full font-bold shadow-lg shadow-primary/20 transition-all flex items-center gap-2"
+                disabled={isSubmitLoading}
+                className="px-10 py-3 bg-primary text-on-primary rounded-full font-bold shadow-lg shadow-primary/20 transition-all flex items-center gap-2 disabled:opacity-70"
               >
-                <MaterialIcon name={isEditMode ? "save" : "person_add"} size={20} />
-                {isEditMode ? 'তথ্য আপডেট করুন' : 'অফিসার সংরক্ষণ করুন'}
+                {isSubmitLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <MaterialIcon name={isEditMode ? "save" : "person_add"} size={20} />
+                )}
+                {isSubmitLoading ? (isEditMode ? 'আপডেট করা হচ্ছে...' : 'সংরক্ষণ করা হচ্ছে...') : (isEditMode ? 'তথ্য আপডেট করুন' : 'অফিসার সংরক্ষণ করুন')}
               </motion.button>
             </div>
           </div>

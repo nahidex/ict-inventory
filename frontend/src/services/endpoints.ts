@@ -15,6 +15,8 @@ export const endpoints = {
     list: '/officers',
     create: '/officers',
     get: (id: string) => `/officers/${id}`,
+    update: (id: string) => `/officers/${id}`,
+    delete: (id: string) => `/officers/${id}`,
   },
   branches: {
     list: '/branches',
@@ -23,6 +25,12 @@ export const endpoints = {
     update: (id: string) => `/branches/${id}`,
     delete: (id: string) => `/branches/${id}`,
     assets: (id: string) => `/branches/${id}/assets`,
+  },
+  assignments: {
+    list: '/assignments',
+    issue: '/assignments/issue',
+    return: (id: string) => `/assignments/return/${id}`,
+    get: (id: string) => `/assignments/${id}`,
   }
 };
 

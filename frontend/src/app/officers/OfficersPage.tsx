@@ -25,10 +25,15 @@ export default function OfficersPage() {
         limit: 10,
         page: page 
       });
-      setOfficerList(response.data);
-      setMeta(response.meta);
+      // Handle the case where the service might return the whole response object or just the data array
+      const data = response.data || response;
+      const meta = response.meta || { total: data.length, page: 1, totalPages: 1 };
+      
+      setOfficerList(Array.isArray(data) ? data : []);
+      setMeta(meta);
     } catch (error) {
       console.error('Failed to fetch officers:', error);
+      setOfficerList([]);
     } finally {
       setIsLoading(false);
     }
@@ -120,10 +125,16 @@ export default function OfficersPage() {
                         <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-primary/5 flex items-center justify-center text-[10px] font-black text-primary border border-primary/10 overflow-hidden flex-shrink-0">
                           {officer.photoUrl ? (
                             <img 
-                              src={officer.photoUrl} 
+                              src={officer.photoUrl.startsWith('http') ? officer.photoUrl : `http://localhost:5000${officer.photoUrl}`} 
                               alt={officer.name} 
                               className="w-full h-full object-cover"
                               referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                if (!target.src.includes('placehold.co')) {
+                                  target.src = 'https://placehold.co/400x400/f3f4f6/6b7280?text=Error';
+                                }
+                              }}
                             />
                           ) : (
                             <span className="font-sans">{getInitials(officer.name)}</span>

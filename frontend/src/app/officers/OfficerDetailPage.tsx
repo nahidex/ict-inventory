@@ -100,10 +100,16 @@ export default function OfficerDetailPage() {
               <div className="absolute -top-14 border-[6px] border-surface-container-lowest w-28 h-28 rounded-[28px] overflow-hidden shadow-2xl bg-white group cursor-pointer transition-all duration-300 hover:scale-105 active:scale-95">
                 {officer.photoUrl ? (
                   <img 
-                    src={officer.photoUrl.startsWith('data:') ? officer.photoUrl : (officer.photoUrl.startsWith('http') ? officer.photoUrl : `http://localhost:5000${officer.photoUrl}`)} 
+                    src={officer.photoUrl.startsWith('http') ? officer.photoUrl : `http://localhost:5000${officer.photoUrl}`} 
                     alt={officer.name} 
                     className="w-full h-full object-cover" 
                     referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      if (!target.src.includes('placehold.co')) {
+                        target.src = 'https://placehold.co/400x400/f3f4f6/6b7280?text=Error';
+                      }
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-primary-container text-primary font-black text-3xl font-sans">
@@ -152,6 +158,16 @@ export default function OfficerDetailPage() {
                 >
                   <MaterialIcon name="edit" size={20} />
                   তথ্য পরিবর্তন করুন
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => navigate(`/officers/transfer/${officer.id}`)}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-primary text-on-primary rounded-2xl font-bold transition-all shadow-lg shadow-primary/10"
+                >
+                  <MaterialIcon name="sync_alt" size={18} />
+                  ট্রান্সফার বা রিলিজ করুন
                 </motion.button>
                 
                 <motion.button

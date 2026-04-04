@@ -99,7 +99,7 @@ export default function AssetTable() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'Available': return 'উপলব্ধ';
+      case 'Available': return 'বরাদ্দযোগ্য';
       case 'Assigned': return 'বরাদ্দ';
       case 'UnderRepair': 
       case 'Under_Repair': return 'মেরামত';
@@ -123,7 +123,7 @@ export default function AssetTable() {
   };
 
   const statusOptions = [
-    { value: 'Available', label: 'উপলব্ধ' },
+    { value: 'Available', label: 'বরাদ্দযোগ্য' },
     { value: 'Assigned', label: 'বরাদ্দ' },
     { value: 'Under_Repair', label: 'মেরামত' },
     { value: 'Damaged', label: 'ক্ষতিগ্রস্ত' },
@@ -274,13 +274,18 @@ export default function AssetTable() {
                       >
                         <td className="px-8 py-6 pl-10">
                           <div className="flex items-center gap-5">
-                            <div className="w-16 h-16 rounded-2xl bg-white overflow-hidden flex-shrink-0 border border-outline-variant shadow-sm p-1.5 flex items-center justify-center transition-transform group-hover:scale-105">
+                            <div className="w-16 h-16 rounded-2xl bg-surface-container-low overflow-hidden flex-shrink-0 border border-outline-variant shadow-sm flex items-center justify-center transition-transform group-hover:scale-105 relative">
                               {asset.imageUrl || asset.initialImageUrl ? (
                                 <img 
                                   src={asset.imageUrl || asset.initialImageUrl || ''} 
                                   alt={asset.model || ''} 
-                                  className="w-full h-full object-contain" 
-                                  referrerPolicy="no-referrer" 
+                                  className="w-full h-full object-cover" 
+                                  crossOrigin="anonymous"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.src = 'https://placehold.co/100x100/f3f4f6/6b7280?text=Error';
+                                    target.onerror = null;
+                                  }}
                                 />
                               ) : (
                                 <MaterialIcon name="devices" size={28} className="text-on-surface-variant/30" />
