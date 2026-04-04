@@ -1,14 +1,14 @@
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
+const { PrismaClient } = require("@prisma/client");
+const bcrypt = require("bcryptjs");
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🚀 ডেটাবেজ সিডিং শুরু হচ্ছে...");
+  console.log("🚀 ডেটাবেজ সিডিং শুরু হচ্ছে (JavaScript)...");
   const password = await bcrypt.hash("password123", 10);
 
   // ১. ইউজার
-  await (prisma as any).user.upsert({
+  await prisma.user.upsert({
     where: { email: "admin@example.com" },
     update: {},
     create: {
@@ -28,9 +28,9 @@ async function main() {
     { name: "ইউপিএস", code: "UPS" },
   ];
 
-  const catMap: Record<string, number> = {};
+  const catMap = {};
   for (const c of categories) {
-    const created = await (prisma as any).category.upsert({
+    const created = await prisma.category.upsert({
       where: { code: c.code },
       update: { name: c.name },
       create: c,
@@ -45,9 +45,9 @@ async function main() {
     { name: "হিসাব শাখা", code: "ACCOUNTS" },
   ];
 
-  const branchIds: number[] = [];
+  const branchIds = [];
   for (const b of branchData) {
-    const created = await (prisma as any).branch.upsert({
+    const created = await prisma.branch.upsert({
       where: { code: b.code },
       update: { name: b.name },
       create: { ...b, status: "Active" },
@@ -62,15 +62,15 @@ async function main() {
   ];
 
   for (const off of officers) {
-    const exists = await (prisma as any).officer.findFirst({ where: { email: off.email } });
+    const exists = await prisma.officer.findFirst({ where: { email: off.email } });
     if (exists) {
-      await (prisma as any).officer.update({ where: { id: exists.id }, data: off });
+      await prisma.officer.update({ where: { id: exists.id }, data: off });
     } else {
-      await (prisma as any).officer.create({ data: off });
+      await prisma.officer.create({ data: off });
     }
   }
 
-  const allOfficers = await (prisma as any).officer.findMany();
+  const allOfficers = await prisma.officer.findMany();
 
   // ৫. এসেট
   console.log("📦 ২০টি ডেমো এসেট তৈরি করা হচ্ছে...");
@@ -79,9 +79,9 @@ async function main() {
     const status = i % 2 === 0 ? "Assigned" : "Available";
     const targetOfficerId = status === "Assigned" ? allOfficers[0].id : null;
 
-    const asset = await (prisma as any).asset.upsert({
+    const asset = await prisma.asset.upsert({
       where: { assetTag: assetTag },
-      update: { status: status, currentOfficerId: targetOfficerId },
+      update: { status: status, currentOfficerId: targetOfficerId, branchId: branchIds[0] },
       create: {
         assetTag: assetTag,
         brand: "Dell",
@@ -98,7 +98,7 @@ async function main() {
     });
 
     if (status === "Assigned") {
-      await (prisma as any).assignment.create({
+      await prisma.assignment.create({
         data: {
           assetId: asset.id,
           officerId: targetOfficerId,
@@ -108,7 +108,7 @@ async function main() {
       });
     }
 
-    await (prisma as any).activityLog.create({
+    await prisma.activityLog.create({
       data: {
         assetId: asset.id,
         actionType: "নিবন্ধন সম্পন্ন",
@@ -120,4 +120,6 @@ async function main() {
   console.log("✅ ডেটা সিডিং সফলভাবে সম্পন্ন হয়েছে!");
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

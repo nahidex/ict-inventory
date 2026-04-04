@@ -7,7 +7,7 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     // Dynamically set upload folder based on field name or query
     let uploadPath = 'uploads/';
-    if (file.fieldname === 'assetImage') {
+    if (file.fieldname === 'image' || file.fieldname === 'assetImage') {
       uploadPath += 'assets/';
     } else if (file.fieldname === 'returnImage') {
       uploadPath += 'assignments/';
@@ -41,6 +41,6 @@ export const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB limit
+    fileSize: 50 * 1024 * 1024 // 50MB limit
   }
 });

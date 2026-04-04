@@ -23,7 +23,11 @@ export const getOfficers = async (
             }
           },
           _count: {
-            select: { assignments: true },
+            select: { 
+              assignments: {
+                where: { actualReturnDate: null }
+              } 
+            },
           },
         },
         orderBy: { id: "desc" },
@@ -68,8 +72,15 @@ export const getOfficerById = async (
           }
         },
         assignments: {
+          where: {
+            actualReturnDate: null,
+          },
           include: {
-            asset: true,
+            asset: {
+              include: {
+                category: true,
+              },
+            },
           },
         },
         nocClearance: true,
@@ -84,6 +95,147 @@ export const getOfficerById = async (
     res.status(200).json(officer);
   } catch (error) {
     console.error("GetOfficerById error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const transferOfficer = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const officerId = parseInt(req.params.id as string);
+    const { newBranchId, assetsToCarry: rawCarry, assetsToLeave: rawLeave, targetOfficerId } = req.body;
+
+    const assetsToCarry = Array.isArray(rawCarry) ? rawCarry.map(id => parseInt(id as any)) : [];
+    const assetsToLeave = Array.isArray(rawLeave) ? rawLeave.map(id => parseInt(id as any)) : [];
+    const parsedTargetOfficerId = targetOfficerId ? parseInt(targetOfficerId) : null;
+
+    if (isNaN(officerId)) {
+      res.status(400).json({ message: "Invalid officer ID" });
+      return;
+    }
+
+    if (!newBranchId) {
+      res.status(400).json({ message: "New branch ID is required" });
+      return;
+    }
+
+    const [officer, newBranch, targetOfficer] = await Promise.all([
+      prisma.officer.findUnique({
+        where: { id: officerId },
+        include: { branch: true },
+      }),
+      prisma.branch.findUnique({
+        where: { id: parseInt(newBranchId) },
+      }),
+      parsedTargetOfficerId ? prisma.officer.findUnique({
+        where: { id: parsedTargetOfficerId },
+      }) : Promise.resolve(null),
+    ]);
+
+    if (!officer) {
+      res.status(404).json({ message: "Officer not found" });
+      return;
+    }
+
+    if (!newBranch) {
+      res.status(404).json({ message: "New branch not found" });
+      return;
+    }
+
+    if (parsedTargetOfficerId && !targetOfficer) {
+      res.status(404).json({ message: "Target officer for handover not found" });
+      return;
+    }
+
+    const oldBranchName = officer.branch?.name || "Unknown";
+
+    const result = await prisma.$transaction(async (tx) => {
+      const updatedOfficer = await tx.officer.update({
+        where: { id: officerId },
+        data: { branchId: parseInt(newBranchId) },
+      });
+
+      if (assetsToCarry && Array.isArray(assetsToCarry) && assetsToCarry.length > 0) {
+        await tx.asset.updateMany({
+          where: { id: { in: assetsToCarry } },
+          data: { branchId: parseInt(newBranchId) },
+        });
+
+        await tx.activityLog.createMany({
+          data: assetsToCarry.map((assetId) => ({
+            assetId,
+            actionType: "শাখা বদলি",
+            description: `${newBranch.name} এ বদলি হওয়া অফিসারের সাথে অ্যাসেট স্থানান্তর করা হয়েছে`,
+          })),
+        });
+      }
+
+      if (assetsToLeave && Array.isArray(assetsToLeave) && assetsToLeave.length > 0) {
+        const assignmentsToClose = await tx.assignment.findMany({
+          where: {
+            officerId,
+            assetId: { in: assetsToLeave },
+            actualReturnDate: null,
+          },
+        });
+
+        if (assignmentsToClose.length > 0) {
+          await tx.assignment.updateMany({
+            where: { id: { in: assignmentsToClose.map((a) => a.id) } },
+            data: {
+              actualReturnDate: new Date(),
+              returnCondition: targetOfficer ? "Handed over to " + targetOfficer.name : "Good (Left at Branch)",
+            },
+          });
+        }
+
+        await tx.asset.updateMany({
+          where: { id: { in: assetsToLeave } },
+          data: { 
+            status: targetOfficer ? "Assigned" : ("Available" as any),
+            currentOfficerId: targetOfficer ? targetOfficer.id : null,
+            branchId: targetOfficer && targetOfficer.branchId ? targetOfficer.branchId : undefined
+          },
+        });
+
+        if (targetOfficer) {
+          await tx.assignment.createMany({
+            data: assetsToLeave.map((assetId) => ({
+              assetId,
+              officerId: targetOfficer.id,
+              issueDate: new Date(),
+              comments: `Received from ${officer.name} during their transfer`,
+            })),
+          });
+        }
+
+        for (const assetId of assetsToLeave) {
+          await tx.activityLog.create({
+            data: {
+              assetId,
+              actionType: targetOfficer ? "হস্তান্তর" : "ফেরত গ্রহণ",
+              description: targetOfficer 
+                ? `অফিসার ${officer.name} থেকে ${targetOfficer.name} এর নিকট অ্যাসেট হস্তান্তর করা হয়েছে`
+                : `অফিসার ${officer.name} কর্তৃক ${oldBranchName} এ অ্যাসেটটি ফেরত প্রদান করা হয়েছে`,
+            }
+          });
+        }
+      }
+
+      return updatedOfficer;
+    });
+
+    res.status(200).json({
+      message: "Officer transferred successfully",
+      officer: officer.name,
+      from: oldBranchName,
+      to: newBranch.name,
+      handoverTo: targetOfficer ? targetOfficer.name : null
+    });
+  } catch (error) {
+    console.error("TransferOfficer error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -123,7 +275,7 @@ export const checkClearance = async (
       pendingAssetsCount: activeAssignments.length,
       pendingAssets: activeAssignments.map((a) => ({
         assetTag: a.asset?.assetTag,
-        name: a.assetId, // or asset name if you add it to the model
+        name: a.assetId,
       })),
       message: isClear
         ? "Officer is clear to proceed with NOC"
@@ -143,8 +295,6 @@ export const createOfficer = async (
     const { name, designation, department, phone, email, photoUrl: photoUrlFromLink, branchId } = req.body;
     let photoUrl = null;
 
-    // Logic: If there's an uploaded file, use it. 
-    // Otherwise, if there's a link in photoUrl field, use that.
     if (req.file) {
       photoUrl = `/uploads/officers/${req.file.filename}`;
     } else if (photoUrlFromLink) {
@@ -192,19 +342,32 @@ export const updateOfficer = async (
     const { name, designation, department, phone, email, isActive, photoUrl: photoUrlFromLink, branchId } = req.body;
     let photoUrl = undefined;
 
-    // Logic: If there's an uploaded file, use it. 
-    // Otherwise, if there's a link in photoUrl field, use that.
-    // Otherwise, keep the existing one (don't update).
     if (req.file) {
       photoUrl = `/uploads/officers/${req.file.filename}`;
     } else if (photoUrlFromLink !== undefined) {
-      photoUrl = photoUrlFromLink;
+      const serverUrl = `${req.protocol}://${req.get('host')}/uploads/`;
+      if (typeof photoUrlFromLink === 'string' && photoUrlFromLink.includes('/uploads/')) {
+         const parts = photoUrlFromLink.split('/uploads/');
+         photoUrl = `/uploads/${parts[parts.length - 1]}`;
+      } else {
+         photoUrl = photoUrlFromLink;
+      }
     }
 
     const existingOfficer = await prisma.officer.findUnique({ where: { id } });
     if (!existingOfficer) {
       res.status(404).json({ message: "Officer not found" });
       return;
+    }
+
+    let parsedBranchId = undefined;
+    if (branchId === "" || branchId === "null" || branchId === null) {
+      parsedBranchId = null;
+    } else if (branchId !== undefined) {
+      const parsed = parseInt(branchId as string);
+      if (!isNaN(parsed)) {
+        parsedBranchId = parsed;
+      }
     }
 
     const updatedOfficer = await prisma.officer.update({
@@ -216,7 +379,7 @@ export const updateOfficer = async (
         phone,
         email,
         photoUrl,
-        branchId: branchId ? parseInt(branchId) : undefined,
+        branchId: parsedBranchId,
         isActive: isActive !== undefined ? (isActive === 'true' || isActive === true) : undefined,
       },
     });
@@ -270,127 +433,6 @@ export const deleteOfficer = async (
     res.status(200).json({ message: "Officer deleted successfully" });
   } catch (error) {
     console.error("DeleteOfficer error:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-/**
- * Transfer Officer to a new Branch
- * Steps:
- * 1. Update Officer's branchId
- * 2. Update branchId for assets to carry
- * 3. Update currentOfficerId to null and status to Available for assets to leave
- * 4. Create activity log
- */
-export const transferOfficer = async (
-  req: Request,
-  res: Response,
-): Promise<void> => {
-  try {
-    const officerId = parseInt(req.params.id as string);
-    const { newBranchId, assetsToCarry, assetsToLeave } = req.body;
-
-    if (isNaN(officerId) || !newBranchId) {
-      res
-        .status(400)
-        .json({ message: "Invalid Officer ID or New Branch ID missing" });
-      return;
-    }
-
-    // 1. Check if officer and new branch exist
-    const [officer, newBranch] = await Promise.all([
-      prisma.officer.findUnique({
-        where: { id: officerId },
-        include: { branch: true },
-      }),
-      prisma.branch.findUnique({ where: { id: parseInt(newBranchId) } }),
-    ]);
-
-    if (!officer) {
-      res.status(404).json({ message: "Officer not found" });
-      return;
-    }
-
-    if (!newBranch) {
-      res.status(404).json({ message: "New Branch not found" });
-      return;
-    }
-
-    const oldBranchName = officer.branch?.name || "অজ্ঞাত শাখা";
-    const newBranchName = newBranch.name;
-
-    await prisma.$transaction(async (tx) => {
-      // Step 1: Update Officer's branch
-      await tx.officer.update({
-        where: { id: officerId },
-        data: { branchId: newBranch.id },
-      });
-
-      // Step 2: Assets to Carry (Update branchId, keep currentOfficerId)
-      if (
-        assetsToCarry &&
-        Array.isArray(assetsToCarry) &&
-        assetsToCarry.length > 0
-      ) {
-        await tx.asset.updateMany({
-          where: {
-            id: { in: assetsToCarry },
-            currentOfficerId: officerId,
-          },
-          data: {
-            branchId: newBranch.id,
-          },
-        });
-      }
-
-      // Step 3: Assets to Leave (Set currentOfficerId to null, keep branchId, set status Available)
-      if (
-        assetsToLeave &&
-        Array.isArray(assetsToLeave) &&
-        assetsToLeave.length > 0
-      ) {
-        // We need to update Assignment records too (mark as returned)
-        await tx.assignment.updateMany({
-          where: {
-            assetId: { in: assetsToLeave },
-            officerId: officerId,
-            actualReturnDate: null,
-          },
-          data: {
-            actualReturnDate: new Date(),
-            returnCondition: "বদলির সময় রেখে যাওয়া হয়েছে",
-          },
-        });
-
-        await tx.asset.updateMany({
-          where: {
-            id: { in: assetsToLeave },
-            currentOfficerId: officerId,
-          },
-          data: {
-            currentOfficerId: null,
-            status: "Available",
-          },
-        });
-      }
-
-      // Step 4: Activity Log
-      await tx.activityLog.create({
-        data: {
-          actionType: "OFFICER_TRANSFER",
-          description: `অফিসার ${officer.name} ${oldBranchName} থেকে ${newBranchName}-এ বদলি হয়েছেন। ${assetsToCarry?.length || 0}টি মাল সাথে নিয়েছেন এবং ${assetsToLeave?.length || 0}টি মাল রেখে গেছেন।`,
-        },
-      });
-    });
-
-    res.status(200).json({
-      message: "Officer transferred successfully",
-      officer: officer.name,
-      from: oldBranchName,
-      to: newBranchName,
-    });
-  } catch (error) {
-    console.error("OfficerTransfer error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

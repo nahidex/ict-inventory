@@ -114,14 +114,16 @@ export const createAsset = async (req: Request, res: Response): Promise<void> =>
       serialNumber, 
       purchaseDate, 
       purchaseSource, 
-      status 
+      status,
+      branchId,
+      description
     } = req.body;
 
     const initialImageUrl = req.file ? `/uploads/assets/${req.file.filename}` : null;
 
     // Basic validation
-    if (!assetTag) {
-      res.status(400).json({ message: 'Asset tag is required' });
+    if (!assetTag || !branchId) {
+      res.status(400).json({ message: 'Asset tag and Branch ID are required' });
       return;
     }
 
@@ -145,6 +147,7 @@ export const createAsset = async (req: Request, res: Response): Promise<void> =>
         data: {
           assetTag,
           categoryId: categoryId ? parseInt(categoryId) : null,
+          branchId: parseInt(branchId),
           brand,
           model,
           serialNumber,
@@ -152,7 +155,8 @@ export const createAsset = async (req: Request, res: Response): Promise<void> =>
           purchaseSource: purchaseSource || 'Budget',
           status: status || 'Available',
           initialImageUrl: initialImageUrl,
-        } as any,
+          locationDetails: description || null,
+        },
         include: {
           category: true,
         },
@@ -161,8 +165,8 @@ export const createAsset = async (req: Request, res: Response): Promise<void> =>
       await tx.activityLog.create({
         data: {
           assetId: newAsset.id,
-          actionType: 'CREATE',
-          description: `Asset initially registered with tag ${assetTag}`
+          actionType: 'নিবন্ধন সম্পন্ন',
+          description: `অ্যাসেটটি সিস্টেমে নিবন্ধিত করা হয়েছে। আইডি: ${assetTag}`
         }
       });
 
@@ -197,7 +201,8 @@ export const updateAsset = async (req: Request, res: Response): Promise<void> =>
       serialNumber, 
       purchaseDate, 
       purchaseSource, 
-      status 
+      status,
+      description
     } = req.body;
 
     const initialImageUrl = req.file ? `/uploads/assets/${req.file.filename}` : undefined;
@@ -242,6 +247,7 @@ export const updateAsset = async (req: Request, res: Response): Promise<void> =>
         purchaseSource,
         status,
         initialImageUrl: initialImageUrl,
+        locationDetails: description,
       } as any,
       include: {
         category: true,

@@ -47,8 +47,8 @@ export const issueAsset = async (req: Request, res: Response): Promise<void> => 
       prisma.activityLog.create({
         data: {
           assetId,
-          actionType: 'ASSIGNMENT',
-          description: `Asset assigned to officer ${officer.name}`
+          actionType: 'বরাদ্দ প্রদান',
+          description: `অফিসার ${officer.name} কে অ্যাসেট বরাদ্দ প্রদান করা হয়েছে`
         }
       })
     ]);
@@ -81,7 +81,7 @@ export const returnAsset = async (req: Request, res: Response): Promise<void> =>
 
     const assignment = await prisma.assignment.findUnique({
       where: { id: assignmentId },
-      include: { asset: true }
+      include: { asset: { include: { currentOfficer: true } } }
     });
 
     if (!assignment) {
@@ -93,6 +93,8 @@ export const returnAsset = async (req: Request, res: Response): Promise<void> =>
       res.status(400).json({ message: 'Asset has already been returned' });
       return;
     }
+
+    const officerName = assignment.asset?.currentOfficer?.name || 'অফিসার';
 
     // Update assignment and set asset to Available in a transaction
     await prisma.$transaction([
@@ -107,13 +109,16 @@ export const returnAsset = async (req: Request, res: Response): Promise<void> =>
       }),
       prisma.asset.update({
         where: { id: assignment.assetId! },
-        data: { status: 'Available' } as any
+        data: { 
+          status: 'Available',
+          currentOfficerId: null
+        } as any
       }),
       prisma.activityLog.create({
         data: {
           assetId: assignment.assetId,
-          actionType: 'RETURN',
-          description: `Asset returned. Condition: ${returnCondition || 'Good'}`
+          actionType: 'ফেরত গ্রহণ',
+          description: `${officerName} থেকে অ্যাসেটটি স্টোরে ফেরত নেয়া হয়েছে। কন্ডিশন: ${returnCondition || 'ভাল'}`
         }
       })
     ]);

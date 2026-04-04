@@ -58,7 +58,7 @@ model Asset {
   model           String?        @db.VarChar(50)
   serialNumber    String?        @unique @map("serial_number") @db.VarChar(100)
   purchaseDate    DateTime?      @map("purchase_date") @db.Date
-  purchaseSource  PurchaseSource @default(Budget) @map("purchase_source")
+  purchaseSource  PurchaseSource @default(Planning) @map("purchase_source")
   locationDetails String?        @map("location_details") @db.VarChar(255)
   initialImageUrl String?        @map("initial_image_url") @db.Text
   status          AssetStatus    @default(Available)
@@ -140,9 +140,9 @@ enum AssetStatus {
 }
 
 enum PurchaseSource {
-  Budget
-  Admin_2 @map("Admin-2")
-  Others
+  Planning
+  Development
+  Budget_2 @map("Budget-2")
 }
 
 enum RepairStatus {

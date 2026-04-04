@@ -6,9 +6,9 @@ import { upload } from '../middleware/upload.middleware';
 const router = Router();
 
 router.get('/', authenticate, getAssets);
-router.post('/', authenticate, upload.single('assetImage'), createAsset);
+router.post('/', authenticate, upload.single('image'), createAsset);
 router.get('/:id', authenticate, getAssetById);
-router.patch('/:id', authenticate, upload.single('assetImage'), updateAsset);
+router.patch('/:id', authenticate, upload.single('image'), updateAsset);
 router.delete('/:id', authenticate, deleteAsset);
 
 export default router;
