@@ -1,20 +1,56 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# ICT Inventory Management - Frontend
 
-# Run and deploy your AI Studio app
+A modern, high-performance ICT Inventory and Asset Lifecycle Management dashboard built with **React**, **Vite**, **TypeScript**, and **Tailwind CSS**.
 
-This contains everything you need to run your app locally.
+## ✨ Features
 
-View your app in AI Studio: https://ai.studio/apps/417712d5-464c-4942-b9e7-7151c1a6a5a2
+- **Asset Management:** Track lifecycle from registration to disposal.
+- **Officer Management:** Detailed profiles with asset assignment history.
+- **Branch Management:** Geographic tracking of assets.
+- **Asset Timeline:** Visual history of all transitions (Assignment, Return, Transfer).
+- **Modern UI:** Material Design 3 inspired components with Framer Motion animations.
+- **Responsive:** Optimized for desktop and tablets.
 
-## Run Locally
+## 🚀 Getting Started
 
-**Prerequisites:**  Node.js
+### Prerequisites
 
+- **Node.js**: v18.0.0 or higher
+- **Backend Server**: Ensure the [API Server](../backend) is running.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Installation
+
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## 🛠 Tech Stack
+
+- **Framework:** React 18
+- **Build Tool:** Vite
+- **Styling:** Tailwind CSS
+- **Animations:** Framer Motion
+- **Icons:** Material Symbols (Material Icons)
+- **State Management:** Context API / Hooks
+- **HTTP Client:** Axios
+
+## 📁 Folder Structure
+
+- `src/app/`: Page components and routing.
+- `src/components/`: Reusable UI components (Atoms, Molecules).
+- `src/services/`: API integration and services.
+- `src/hooks/`: Custom React hooks.
+- `src/styles/`: Global styles and Tailwind configuration.
+- `src/types/`: TypeScript interfaces and types.
+
