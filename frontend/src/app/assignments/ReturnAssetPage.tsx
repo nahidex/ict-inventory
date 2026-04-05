@@ -2,50 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { MaterialIcon } from '../../components/atoms/Icons';
-
-// Mock data for assignments (same as in Detail Page)
-const mockAssignments = [
-  {
-    "id": 30,
-    "assetId": 100,
-    "officerId": 50,
-    "issueDate": "2026-04-01T00:00:00.000Z",
-    "actualReturnDate": null,
-    "returnCondition": null,
-    "returnImageUrl": null,
-    "comments": null,
-    "issuedBy": "Admin User",
-    "asset": {
-      "id": 100,
-      "categoryId": 72,
-      "assetTag": "OFF-DEL-01",
-      "brand": "Dell",
-      "model": "Latitude 5420",
-      "serialNumber": "SN-123456789",
-      "purchaseDate": "2025-01-15",
-      "purchaseSource": "Budget",
-      "initialImageUrl": "https://picsum.photos/seed/laptop/400/300",
-      "status": "Assigned"
-    },
-    "officer": {
-      "id": 50,
-      "name": "Assigned Officer",
-      "designation": "সিনিয়র সিস্টেম অ্যানালিস্ট",
-      "department": "আইসিটি শাখা",
-      "phone": "01712345678",
-      "email": "officer@example.gov.bd",
-      "photoUrl": "https://picsum.photos/seed/officer1/200/200",
-      "isActive": true,
-      "createdAt": "2026-04-01T09:40:20.731Z"
-    }
-  }
-];
+import { assignmentService } from '../../services/assignment.service';
 
 export default function ReturnAssetPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [assignment, setAssignment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Form State
   const [returnDate, setReturnDate] = useState(new Date().toISOString().split('T')[0]);
@@ -55,12 +19,22 @@ export default function ReturnAssetPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate fetching assignment details
-    const found = mockAssignments.find(a => a.id === Number(id));
-    if (found) {
-      setAssignment(found);
-    }
-    setLoading(false);
+    const fetchAssignment = async () => {
+      if (!id) return;
+      try {
+        setLoading(true);
+        const data = await assignmentService.getById(id);
+        setAssignment(data);
+        setError(null);
+      } catch (err: any) {
+        console.error('Error fetching assignment:', err);
+        setError('বরাদ্দ তথ্য লোড করা সম্ভব হয়নি।');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssignment();
   }, [id]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -75,12 +49,26 @@ export default function ReturnAssetPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this would be an API call
-    console.log('Returning Asset:', { returnDate, condition, comments, image });
-    alert('এসেট ফেরত সফলভাবে সম্পন্ন হয়েছে!');
-    navigate(`/assignments/${id}`);
+    if (!id) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('actualReturnDate', returnDate);
+      formData.append('returnCondition', condition);
+      formData.append('comments', comments);
+      if (image) {
+        formData.append('returnImage', image);
+      }
+
+      await assignmentService.return(id, formData);
+      alert('এসেট ফেরত সফলভাবে সম্পন্ন হয়েছে!');
+      navigate(`/assignments/${id}`);
+    } catch (err: any) {
+      console.error('Error returning asset:', err);
+      alert('এসেট ফেরত দিতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
+    }
   };
 
   if (loading) {
@@ -91,8 +79,13 @@ export default function ReturnAssetPage() {
     );
   }
 
-  if (!assignment) {
-    return <div className="text-center py-20 text-error font-bold">বরাদ্দ তথ্য পাওয়া যায়নি!</div>;
+  if (error || !assignment) {
+    return (
+      <div className="text-center py-20">
+        <div className="text-error font-bold mb-4">{error || 'বরাদ্দ তথ্য পাওয়া যায়নি!'}</div>
+        <button onClick={() => navigate('/assignments')} className="btn btn-primary">ফিরে যান</button>
+      </div>
+    );
   }
 
   return (
@@ -123,13 +116,15 @@ export default function ReturnAssetPage() {
               <h2 className="font-bold text-on-surface uppercase tracking-wider text-xs">এসেট তথ্য</h2>
             </div>
             <div className="p-6 space-y-4">
-              <div className="aspect-video rounded-2xl bg-surface-container-high overflow-hidden border border-outline-variant">
-                <img src={assignment.asset.initialImageUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-              </div>
+              {assignment.asset?.initialImageUrl && (
+                <div className="aspect-video rounded-2xl bg-surface-container-high overflow-hidden border border-outline-variant">
+                  <img src={assignment.asset.initialImageUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                </div>
+              )}
               <div className="space-y-3">
-                <InfoRow label="এসেট ট্যাগ" value={assignment.asset.assetTag} highlight />
-                <InfoRow label="মডেল" value={`${assignment.asset.brand} ${assignment.asset.model}`} />
-                <InfoRow label="সিরিয়াল" value={assignment.asset.serialNumber} />
+                <InfoRow label="এসেট ট্যাগ" value={assignment.asset?.assetTag || '---'} highlight />
+                <InfoRow label="মডেল" value={`${assignment.asset?.brand || ''} ${assignment.asset?.model || ''}`.trim() || '---'} />
+                <InfoRow label="সিরিয়াল" value={assignment.asset?.serialNumber || '---'} />
               </div>
             </div>
           </div>
@@ -142,12 +137,18 @@ export default function ReturnAssetPage() {
             </div>
             <div className="p-6 flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl bg-primary-container overflow-hidden flex-shrink-0">
-                <img src={assignment.officer.photoUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                {assignment.officer?.photoUrl ? (
+                  <img src={assignment.officer.photoUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-primary text-on-primary font-black text-xl">
+                    {assignment.officer?.name?.charAt(0) || '?'}
+                  </div>
+                )}
               </div>
               <div>
-                <p className="font-black text-primary">{assignment.officer.name}</p>
-                <p className="text-xs text-on-surface-variant font-bold uppercase tracking-tight">{assignment.officer.designation}</p>
-                <p className="text-[10px] text-on-surface-variant font-medium">{assignment.officer.department}</p>
+                <p className="font-black text-primary">{assignment.officer?.name || 'অজানা অফিসার'}</p>
+                <p className="text-xs text-on-surface-variant font-bold uppercase tracking-tight">{assignment.officer?.designation || 'পদবী উল্লেখ নেই'}</p>
+                <p className="text-[10px] text-on-surface-variant font-medium">{assignment.officer?.department || ''}</p>
               </div>
             </div>
           </div>

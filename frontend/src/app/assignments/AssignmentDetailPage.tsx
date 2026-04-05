@@ -2,99 +2,50 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { MaterialIcon } from '../../components/atoms/Icons';
-
-// Mock data for assignments
-const mockAssignments = [
-  {
-    "id": 30,
-    "assetId": 100,
-    "officerId": 50,
-    "issueDate": "2026-04-01T00:00:00.000Z",
-    "actualReturnDate": null,
-    "returnCondition": null,
-    "returnImageUrl": null,
-    "comments": null,
-    "issuedBy": "Admin User",
-    "asset": {
-      "id": 100,
-      "categoryId": 72,
-      "assetTag": "OFF-DEL-01",
-      "brand": "Dell",
-      "model": "Latitude 5420",
-      "serialNumber": "SN-123456789",
-      "purchaseDate": "2025-01-15",
-      "purchaseSource": "Budget",
-      "initialImageUrl": "https://picsum.photos/seed/laptop/400/300",
-      "status": "Assigned"
-    },
-    "officer": {
-      "id": 50,
-      "name": "Assigned Officer",
-      "designation": "সিনিয়র সিস্টেম অ্যানালিস্ট",
-      "department": "আইসিটি শাখা",
-      "phone": "01712345678",
-      "email": "officer@example.gov.bd",
-      "photoUrl": "https://picsum.photos/seed/officer1/200/200",
-      "isActive": true,
-      "createdAt": "2026-04-01T09:40:20.731Z"
-    }
-  },
-  {
-    "id": 31,
-    "assetId": 101,
-    "officerId": 51,
-    "issueDate": "2026-03-15T00:00:00.000Z",
-    "actualReturnDate": "2026-03-25T10:00:00.000Z",
-    "returnCondition": "Good",
-    "returnImageUrl": "https://picsum.photos/seed/returned/400/300",
-    "comments": "Returned in perfect condition. All accessories included.",
-    "issuedBy": "Admin User",
-    "asset": {
-      "id": 101,
-      "categoryId": 72,
-      "assetTag": "PRN-HP-05",
-      "brand": "HP",
-      "model": "LaserJet Pro",
-      "serialNumber": "SN-987654321",
-      "purchaseDate": "2024-11-05",
-      "purchaseSource": "Project",
-      "initialImageUrl": "https://picsum.photos/seed/printer/400/300",
-      "status": "Available"
-    },
-    "officer": {
-      "id": 51,
-      "name": "Sultana Razia",
-      "designation": "প্রোগ্রামার",
-      "department": "প্রশাসন শাখা",
-      "phone": "01812345679",
-      "email": "razia@example.gov.bd",
-      "photoUrl": "https://picsum.photos/seed/officer2/200/200",
-      "isActive": true,
-      "createdAt": "2026-03-10T09:00:00.000Z"
-    }
-  }
-];
+import { assignmentService } from '../../services/assignment.service';
 
 export default function AssignmentDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [assignment, setAssignment] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate fetching assignment details
-    const found = mockAssignments.find(a => a.id === Number(id));
-    if (found) {
-      setAssignment(found);
-    }
+    const fetchAssignment = async () => {
+      if (!id) return;
+      try {
+        setLoading(true);
+        const data = await assignmentService.getById(id);
+        setAssignment(data);
+        setError(null);
+      } catch (err: any) {
+        console.error('Error fetching assignment details:', err);
+        setError('বরাদ্দ তথ্য লোড করা সম্ভব হয়নি।');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssignment();
   }, [id]);
 
-  if (!assignment) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-4">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="text-on-surface-variant font-medium font-sans">লোড হচ্ছে...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error || !assignment) {
+    return (
+      <div className="text-center py-20">
+        <div className="text-error font-bold mb-4">{error || 'বরাদ্দ তথ্য পাওয়া যায়নি!'}</div>
+        <button onClick={() => navigate('/assignments')} className="btn btn-primary">ফিরে যান</button>
       </div>
     );
   }

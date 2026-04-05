@@ -20,9 +20,13 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Only redirect to login if not already on an auth page (login or register)
+    const isAuthPage = window.location.pathname === '/login' || window.location.pathname === '/register';
+    
+    if (error.response?.status === 401 && !isAuthPage) {
       localStorage.removeItem('token');
       localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);

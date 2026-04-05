@@ -18,8 +18,14 @@ import TransferAssetsPage from './app/officers/TransferAssetsPage';
 import AssignmentsPage from './app/assignments/AssignmentsPage';
 import AssignmentDetailPage from './app/assignments/AssignmentDetailPage';
 import ReturnAssetPage from './app/assignments/ReturnAssetPage';
+import MaintenancePage from './app/maintenance/MaintenancePage';
+import RequestMaintenancePage from './app/maintenance/RequestMaintenancePage';
+import ReceiveFromMaintenancePage from './app/maintenance/ReceiveFromMaintenancePage';
 import LoginPage from './app/auth/login/LoginPage';
+import RegisterPage from './app/auth/register/RegisterPage';
 import BranchPage from './app/branches/BranchPage';
+import OfficerDashboard from './app/officer/Dashboard';
+import OfficerAssetDetailPage from './app/officer/AssetDetail';
 import { authService } from './services/auth.service';
 
 
@@ -27,7 +33,20 @@ const ProtectedRoutes = ({ children }: { children: React.ReactNode }) => {
   if (!authService.isAuthenticated()) {
     return <Navigate to="/login" replace />;
   }
+
+  const user = authService.getUser();
+  if (user?.role === 'USER') {
+    return <Navigate to="/officer/dashboard" replace />;
+  }
+
   return <RootLayout>{children}</RootLayout>;
+};
+
+const OfficerRoutes = ({ children }: { children: React.ReactNode }) => {
+  if (!authService.isAuthenticated()) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
 };
 
 export default function App() {
@@ -35,8 +54,27 @@ export default function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+
+        {/* Officer Dashboard - No Sidebar */}
+        <Route 
+          path="/officer/dashboard" 
+          element={
+            <OfficerRoutes>
+              <OfficerDashboard />
+            </OfficerRoutes>
+          } 
+        />
+        <Route 
+          path="/officer/inventory/:id" 
+          element={
+            <OfficerRoutes>
+              <OfficerAssetDetailPage />
+            </OfficerRoutes>
+          } 
+        />
         
-        {/* Protected Routes */}
+        {/* Protected Admin Routes */}
         <Route path="/" element={<ProtectedRoutes><DashboardPage /></ProtectedRoutes>} />
         <Route path="/inventory" element={<ProtectedRoutes><InventoryPage /></ProtectedRoutes>} />
         <Route path="/inventory/edit/:id" element={<ProtectedRoutes><EditAssetPage /></ProtectedRoutes>} />
@@ -51,6 +89,10 @@ export default function App() {
         <Route path="/assignments" element={<ProtectedRoutes><AssignmentsPage /></ProtectedRoutes>} />
         <Route path="/assignments/:id" element={<ProtectedRoutes><AssignmentDetailPage /></ProtectedRoutes>} />
         <Route path="/assignments/return/:id" element={<ProtectedRoutes><ReturnAssetPage /></ProtectedRoutes>} />
+        
+        <Route path="/maintenance" element={<ProtectedRoutes><MaintenancePage /></ProtectedRoutes>} />
+        <Route path="/maintenance/request" element={<ProtectedRoutes><RequestMaintenancePage /></ProtectedRoutes>} />
+        <Route path="/maintenance/:id/receive" element={<ProtectedRoutes><ReceiveFromMaintenancePage /></ProtectedRoutes>} />
         
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

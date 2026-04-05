@@ -221,8 +221,8 @@ export default function OfficerDetailPage() {
                   
                   <div className="w-24 h-24 rounded-2xl bg-surface-container-low overflow-hidden flex-shrink-0 border border-outline-variant shadow-inner p-2">
                     <img 
-                      src={assignment.asset.imageUrl || 'https://picsum.photos/seed/device/200/200'}
-                      alt={assignment.asset.model} 
+                      src={assignment.asset?.imageUrl || assignment.asset?.initialImageUrl || 'https://picsum.photos/seed/device/200/200'}
+                      alt={assignment.asset?.model || 'Asset'} 
                       className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500"
                       referrerPolicy="no-referrer"
                     />
@@ -231,21 +231,21 @@ export default function OfficerDetailPage() {
                     <div>
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <Badge 
-                          label={assignment.asset.category?.name || assignment.asset.category || 'N/A'} 
+                          label={assignment.asset?.category?.name || assignment.asset?.category || 'N/A'} 
                           variant="secondary" 
                           showDot={false}
                         />
                         <MaterialIcon name="arrow_forward" size={18} className="text-on-surface-variant/20 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                       </div>
-                      <h4 className="font-black text-on-surface text-base group-hover:text-primary transition-colors truncate">{assignment.asset.brand} {assignment.asset.model}</h4>
+                      <h4 className="font-black text-on-surface text-base group-hover:text-primary transition-colors truncate">{assignment.asset?.brand || ''} {assignment.asset?.model || 'Unknown Device'}</h4>
                       <p className="text-[11px] font-black text-on-surface-variant font-mono tracking-wider bg-surface-container-high w-max px-2 py-0.5 rounded-lg mt-1 border border-outline-variant/30 uppercase">
-                        {assignment.asset.assetTag}
+                        {assignment.asset?.assetTag || 'NO-TAG'}
                       </p>
                     </div>
                     <div className="mt-4 flex items-center justify-between">
                       <div className="flex items-center gap-1.5 text-[10px] font-bold text-on-surface-variant bg-primary/5 px-2.5 py-1 rounded-full">
                         <MaterialIcon name="calendar_month" size={14} className="text-primary" />
-                        {new Date(assignment.issueDate).toLocaleDateString('bn-BD')}
+                        {assignment.issueDate ? new Date(assignment.issueDate).toLocaleDateString('bn-BD') : '---'}
                       </div>
                     </div>
                   </div>

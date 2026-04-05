@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { MaterialIcon } from '../../../components/atoms/Icons';
 import { authService } from '../../../services/auth.service';
@@ -30,7 +30,11 @@ export default function LoginPage() {
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('user', JSON.stringify(response.user));
       
-      navigate('/');
+      if (response.user.role === 'USER') {
+        navigate('/officer/dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.response?.data?.message || 'লগিন করতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
@@ -119,6 +123,12 @@ export default function LoginPage() {
         <div className="mt-8 text-center">
           <p className="text-xs text-on-surface-variant font-medium">
             পাসওয়ার্ড ভুলে গেছেন? <button className="text-primary font-bold hover:underline">রিসেট করুন</button>
+          </p>
+        </div>
+        <div className="mt-10 text-center">
+          <p className="text-on-surface-variant font-medium">
+            একাউন্ট নেই? 
+            <Link to="/register" className="text-primary font-black ml-2 hover:underline decoration-2 underline-offset-4">রেজিস্ট্রেশন করুন</Link>
           </p>
         </div>
       </motion.div>

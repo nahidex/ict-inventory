@@ -1,8 +1,9 @@
-import apiClient from './apiClient';
-import { endpoints } from './endpoints';
+import apiClient from "./apiClient";
+import { endpoints } from "./endpoints";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const UPLOADS_BASE_URL = API_BASE_URL.replace('/api', '');
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const UPLOADS_BASE_URL = API_BASE_URL.replace("/api", "");
 
 export interface Officer {
   id: string;
@@ -32,18 +33,18 @@ export interface OfficerFilters {
 
 const mapOfficerImages = (officer: any): Officer => {
   if (!officer) return officer;
-  
+
   let photo = officer.photoUrl;
-  
+
   // Handle relative backend paths
-  if (photo && photo.startsWith('/uploads/')) {
+  if (photo && photo.startsWith("/uploads/")) {
     photo = `${UPLOADS_BASE_URL}${photo}`;
-  } 
+  }
   // Handle paths that might not have leading slash but aren't URLs
-  else if (photo && !photo.startsWith('http') && !photo.startsWith('data:')) {
+  else if (photo && !photo.startsWith("http") && !photo.startsWith("data:")) {
     photo = `${UPLOADS_BASE_URL}/${photo}`;
   }
-  
+
   return { ...officer, photoUrl: photo };
 };
 
@@ -54,10 +55,10 @@ export const officerService = {
       return response.data.map(mapOfficerImages);
     }
     if (response.data.data && Array.isArray(response.data.data)) {
-        return {
-            ...response.data,
-            data: response.data.data.map(mapOfficerImages)
-        };
+      return {
+        ...response.data,
+        data: response.data.data.map(mapOfficerImages),
+      };
     }
     return response.data;
   },
@@ -67,19 +68,28 @@ export const officerService = {
     return mapOfficerImages(response.data);
   },
 
+  async getProfile() {
+    const response = await apiClient.get('/officers/profile');
+    return response.data;
+  },
+
   async create(data: FormData | Partial<Officer>) {
     const isFormData = data instanceof FormData;
     const response = await apiClient.post(endpoints.officers.create, data, {
-      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {}
+      headers: isFormData ? { "Content-Type": "multipart/form-data" } : {},
     });
     return mapOfficerImages(response.data);
   },
 
   async update(id: string, data: FormData | Partial<Officer>) {
     const isFormData = data instanceof FormData;
-    const response = await apiClient.patch(endpoints.officers.update(id), data, {
-      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : {}
-    });
+    const response = await apiClient.patch(
+      endpoints.officers.update(id),
+      data,
+      {
+        headers: isFormData ? { "Content-Type": "multipart/form-data" } : {},
+      },
+    );
     return mapOfficerImages(response.data);
   },
 
@@ -88,8 +98,18 @@ export const officerService = {
     return response.data;
   },
 
-  async transfer(id: string, data: { newBranchId: number; assetsToCarry: number[]; assetsToLeave: number[] }) {
-    const response = await apiClient.patch(endpoints.officers.get(id) + '/transfer', data);
+  async transfer(
+    id: string,
+    data: {
+      newBranchId: number;
+      assetsToCarry: number[];
+      assetsToLeave: number[];
+    },
+  ) {
+    const response = await apiClient.patch(
+      endpoints.officers.get(id) + "/transfer",
+      data,
+    );
     return response.data;
-  }
+  },
 };

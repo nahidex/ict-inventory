@@ -40,8 +40,8 @@ export default function AssignmentsPage() {
   };
 
   const filteredAssignments = assignments.filter(item => 
-    item.asset.assetTag.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.officer.name.toLowerCase().includes(searchQuery.toLowerCase())
+    (item.asset?.assetTag?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+     item.officer?.name?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -139,9 +139,9 @@ export default function AssignmentsPage() {
                           <MaterialIcon name="devices" size={16} />
                         </div>
                         <div>
-                          <div className="font-bold text-on-surface text-xs md:text-sm tracking-tight">{item.asset.assetTag}</div>
+                          <div className="font-bold text-on-surface text-xs md:text-sm tracking-tight">{item.asset?.assetTag || '---'}</div>
                           <div className="text-[9px] md:text-[10px] text-on-surface-variant font-medium uppercase tracking-wider">
-                            {item.asset.brand} {item.asset.model}
+                            {item.asset?.brand || ''} {item.asset?.model || ''}
                           </div>
                         </div>
                       </div>
@@ -149,15 +149,15 @@ export default function AssignmentsPage() {
                     <td className="px-3 md:px-6 py-3 md:py-4">
                       <div className="flex items-center gap-2 md:gap-3">
                         <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-primary-container flex items-center justify-center text-[8px] md:text-[10px] font-black text-primary border border-primary/10 overflow-hidden shadow-sm">
-                          {item.officer.photoUrl ? (
+                          {item.officer?.photoUrl ? (
                             <img src={item.officer.photoUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           ) : (
-                            getInitials(item.officer.name)
+                            getInitials(item.officer?.name || '')
                           )}
                         </div>
                         <div>
-                          <div className="text-xs md:text-sm font-bold text-on-surface tracking-tight">{item.officer.name}</div>
-                          <div className="hidden md:block text-[10px] text-on-surface-variant font-medium">{item.officer.designation}</div>
+                          <div className="text-xs md:text-sm font-bold text-on-surface tracking-tight">{item.officer?.name || 'অজানা'}</div>
+                          <div className="hidden md:block text-[10px] text-on-surface-variant font-medium">{item.officer?.designation || ''}</div>
                         </div>
                       </div>
                     </td>
