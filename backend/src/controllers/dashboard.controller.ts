@@ -24,7 +24,7 @@ export const getDashboardStats = async (req: Request, res: Response): Promise<vo
       prisma.officer.count(),
       prisma.category.count(),
       prisma.nocClearance.count({ where: { status: 'Pending' } }),
-      prisma.maintenance.count({ where: { repairStatus: 'Pending' } }),
+      (prisma as any).maintenance.count({ where: { repair_status: 'Pending' } }),
       prisma.activityLog.findMany({
         take: 5,
         orderBy: { performedAt: 'desc' },

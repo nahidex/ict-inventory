@@ -7,6 +7,7 @@ import {
   deleteOfficer,
   checkClearance,
   transferOfficer,
+  getOfficerProfile,
 } from "../controllers/officer.controller";
 import { authenticate } from "../middleware/auth.middleware";
 import { upload } from "../middleware/upload.middleware";
@@ -14,6 +15,7 @@ import { upload } from "../middleware/upload.middleware";
 const router = Router();
 
 router.get("/", authenticate, getOfficers);
+router.get("/profile", authenticate, getOfficerProfile);
 router.get("/:id/clearance-check", authenticate, checkClearance);
 router.patch("/:id/transfer", authenticate, transferOfficer);
 router.post("/", authenticate, upload.single("photo"), createOfficer);

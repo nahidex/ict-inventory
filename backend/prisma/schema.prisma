@@ -15,15 +15,16 @@ model User {
   role      UserRole @default(USER)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
+  officer   Officer?
 
   @@map("users")
 }
 
 model Category {
   id        Int      @id @default(autoincrement())
-  code      String   @unique @db.VarChar(20)
   name      String   @db.VarChar(50)
   createdAt DateTime @default(now()) @map("created_at")
+  code      String   @unique @db.VarChar(20)
   assets    Asset[]
 
   @@map("categories")
@@ -31,75 +32,70 @@ model Category {
 
 model Officer {
   id           Int            @id @default(autoincrement())
-  branchId     Int?           @map("branch_id")
   name         String         @db.VarChar(100)
   designation  String?        @db.VarChar(100)
   department   String?        @db.VarChar(100)
   phone        String?        @db.VarChar(20)
   email        String?        @db.VarChar(100)
-  photoUrl     String?        @map("photo_url") @db.VarChar(255)
   isActive     Boolean        @default(true) @map("is_active")
   createdAt    DateTime       @default(now()) @map("created_at")
-  branch       Branch?        @relation(fields: [branchId], references: [id])
+  photoUrl     String?        @map("photo_url") @db.VarChar(255)
+  branchId     Int?           @map("branch_id")
+  userId       Int?           @unique @map("user_id")
+  assets       Asset[]
   assignments  Assignment[]
   nocClearance NocClearance[]
-  assets       Asset[]
+  maintenance  maintenance[]
+  branch       Branch?        @relation(fields: [branchId], references: [id])
+  user         User?          @relation(fields: [userId], references: [id])
 
+  @@index([branchId], map: "officers_branch_id_fkey")
   @@map("officers")
 }
 
 model Asset {
-  id              Int            @id @default(autoincrement())
-  categoryId      Int?           @map("category_id")
-  branchId        Int            @map("branch_id")
-  currentOfficerId Int?          @map("current_officer_id")
-  assetTag        String         @unique @map("asset_tag") @db.VarChar(50)
-  brand           String?        @db.VarChar(50)
-  model           String?        @db.VarChar(50)
-  serialNumber    String?        @unique @map("serial_number") @db.VarChar(100)
-  purchaseDate    DateTime?      @map("purchase_date") @db.Date
-  purchaseSource  PurchaseSource @default(Planning) @map("purchase_source")
-  locationDetails String?        @map("location_details") @db.VarChar(255)
-  initialImageUrl String?        @map("initial_image_url") @db.Text
-  status          AssetStatus    @default(Available)
-  category        Category?      @relation(fields: [categoryId], references: [id])
-  branch          Branch         @relation(fields: [branchId], references: [id])
-  currentOfficer  Officer?       @relation(fields: [currentOfficerId], references: [id])
-  assignments     Assignment[]
-  maintenance     Maintenance[]
-  activityLogs    ActivityLog[]
+  id               Int                    @id @default(autoincrement())
+  categoryId       Int?                   @map("category_id")
+  assetTag         String                 @unique @map("asset_tag") @db.VarChar(50)
+  brand            String?                @db.VarChar(50)
+  model            String?                @db.VarChar(50)
+  serialNumber     String?                @unique @map("serial_number") @db.VarChar(100)
+  purchaseDate     DateTime?              @map("purchase_date") @db.Date
+  purchaseSource   assets_purchase_source @default(Budget) @map("purchase_source")
+  initialImageUrl  String?                @map("initial_image_url") @db.Text
+  status           AssetStatus            @default(Available)
+  branchId         Int                    @map("branch_id")
+  currentOfficerId Int?                   @map("current_officer_id")
+  locationDetails  String?                @map("location_details") @db.VarChar(255)
+  activityLogs     ActivityLog[]
+  branch           Branch                 @relation(fields: [branchId], references: [id])
+  category         Category?              @relation(fields: [categoryId], references: [id])
+  currentOfficer   Officer?               @relation(fields: [currentOfficerId], references: [id])
+  assignments      Assignment[]
+  maintenance      maintenance[]
 
+  @@index([branchId], map: "assets_branch_id_fkey")
+  @@index([categoryId], map: "assets_category_id_fkey")
+  @@index([currentOfficerId], map: "assets_current_officer_id_fkey")
   @@map("assets")
 }
 
 model Assignment {
-  id                 Int       @id @default(autoincrement())
-  assetId            Int?      @map("asset_id")
-  officerId          Int?      @map("officer_id")
-  issueDate          DateTime  @map("issue_date") @db.Date
-  actualReturnDate   DateTime? @map("actual_return_date") @db.Date
-  returnCondition    String?   @map("return_condition") @db.Text
-  returnImageUrl     String?   @map("return_image_url") @db.Text
-  comments           String?   @db.Text
-  issuedBy           Int?      @map("issued_by")
-  asset              Asset?    @relation(fields: [assetId], references: [id])
-  officer            Officer?  @relation(fields: [officerId], references: [id])
+  id               Int       @id @default(autoincrement())
+  assetId          Int?      @map("asset_id")
+  officerId        Int?      @map("officer_id")
+  issueDate        DateTime  @map("issue_date") @db.Date
+  actualReturnDate DateTime? @map("actual_return_date") @db.Date
+  returnCondition  String?   @map("return_condition") @db.Text
+  returnImageUrl   String?   @map("return_image_url") @db.Text
+  comments         String?   @db.Text
+  issuedBy         Int?      @map("issued_by")
+  asset            Asset?    @relation(fields: [assetId], references: [id])
+  officer          Officer?  @relation(fields: [officerId], references: [id])
 
+  @@index([assetId], map: "assignments_asset_id_fkey")
+  @@index([officerId], map: "assignments_officer_id_fkey")
   @@map("assignments")
-}
-
-model Maintenance {
-  id               Int            @id @default(autoincrement())
-  assetId          Int?           @map("asset_id")
-  issueDescription String?        @map("issue_description") @db.Text
-  sentDate         DateTime?      @map("sent_date") @db.Date
-  receiveDate      DateTime?      @map("receive_date") @db.Date
-  vendorName       String?        @map("vendor_name") @db.VarChar(100)
-  repairCost       Decimal        @default(0.00) @map("repair_cost") @db.Decimal(10, 2)
-  repairStatus     RepairStatus   @default(Pending) @map("repair_status")
-  asset            Asset?         @relation(fields: [assetId], references: [id])
-
-  @@map("maintenance")
 }
 
 model NocClearance {
@@ -111,6 +107,7 @@ model NocClearance {
   remarks         String?   @db.Text
   officer         Officer?  @relation(fields: [officerId], references: [id])
 
+  @@index([officerId], map: "noc_clearance_officer_id_fkey")
   @@map("noc_clearance")
 }
 
@@ -122,43 +119,8 @@ model ActivityLog {
   performedAt DateTime @default(now()) @map("performed_at")
   asset       Asset?   @relation(fields: [assetId], references: [id])
 
+  @@index([assetId], map: "activity_logs_asset_id_fkey")
   @@map("activity_logs")
-}
-
-enum UserRole {
-  ADMIN
-  USER
-}
-
-enum AssetStatus {
-  Available
-  Assigned
-  Under_Repair @map("Under Repair")
-  Disposed
-  Returned
-  Maintenance_Returned @map("Maintenance Returned")
-}
-
-enum PurchaseSource {
-  Planning
-  Development
-  Budget_2 @map("Budget-2")
-}
-
-enum RepairStatus {
-  Pending
-  Completed
-}
-
-enum NocStatus {
-  Pending
-  Approved
-  Rejected
-}
-
-enum BranchStatus {
-  Active
-  Inactive
 }
 
 model Branch {
@@ -175,4 +137,57 @@ model Branch {
   officers   Officer[]
 
   @@map("branches")
+}
+
+model maintenance {
+  id                Int                       @id @default(autoincrement())
+  asset_id          Int?
+  officer_id        Int?                      @map("officer_id")
+  issue_description String?                   @db.Text
+  sent_date         DateTime?                 @db.Date
+  receive_date      DateTime?                 @db.Date
+  vendor_name       String?                   @db.VarChar(100)
+  repair_cost       Decimal                   @default(0.00) @db.Decimal(10, 2)
+  repair_status     maintenance_repair_status @default(Pending)
+  assets            Asset?                    @relation(fields: [asset_id], references: [id])
+  officers          Officer?                  @relation(fields: [officer_id], references: [id])
+
+  @@index([asset_id], map: "maintenance_asset_id_fkey")
+  @@index([officer_id], map: "maintenance_officer_id_fkey")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum AssetStatus {
+  Available
+  Assigned
+  Under_Repair         @map("Under Repair")
+  Disposed
+  Returned
+  Maintenance_Returned @map("Maintenance Returned")
+}
+
+enum NocStatus {
+  Pending
+  Approved
+  Rejected
+}
+
+enum BranchStatus {
+  Active
+  Inactive
+}
+
+enum maintenance_repair_status {
+  Pending
+  Completed
+}
+
+enum assets_purchase_source {
+  Budget
+  Admin_2 @map("Admin-2")
+  Others
 }

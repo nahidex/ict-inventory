@@ -280,14 +280,31 @@ Base URL: `http://localhost:3000/api`
 
 ## Maintenance
 
-| Method | Endpoint                   | Description                       | Auth Required |
-| ------ | -------------------------- | --------------------------------- | ------------- |
-| POST   | `/maintenance/send`        | Send an asset for repair          | Yes           |
-| PUT    | `/maintenance/receive/:id` | Mark as received from maintenance | Yes           |
+| Method | Endpoint                        | Description                            | Auth Required |
+| ------ | ------------------------------- | -------------------------------------- | ------------- |
+| POST   | `/maintenance/request`          | Create maintenance request             | Yes           |
+| POST   | `/maintenance/send`             | Send an asset for repair               | Yes           |
+| PUT    | `/maintenance/receive/:id`      | Mark as received from maintenance      | Yes           |
+| GET    | `/maintenance/history/:assetId` | Get maintenance history for an asset   | Yes           |
 
 ### Maintenance API Details
 
-#### 1. Send for Maintenance
+#### 1. Create Maintenance Request
+
+- **Endpoint:** `POST /maintenance/request`
+- **Description:** মেইনটেন্যান্স রিকোয়েস্ট তৈরি করে এবং অ্যাসেট স্ট্যাটাস `Under_Repair` করে দেয়।
+- **Request Body:**
+  ```json
+  {
+    "assetId": 1,
+    "officerId": 5,
+    "issueDescription": "ডিসপ্লেতে লাইন দেখা যাচ্ছে",
+    "vendorDetails": "সুমন ল্যাপটপ সার্ভিসিং সেন্টার",
+    "startDate": "2026-04-05"
+  }
+  ```
+
+#### 2. Send for Maintenance
 
 - **Endpoint:** `POST /maintenance/send`
 - **Request Body:**
@@ -295,22 +312,30 @@ Base URL: `http://localhost:3000/api`
   {
     "assetId": 1,
     "issueDescription": "Screen flickering",
-    "vendorName": "Dell Service Center",
-    "sentDate": "2024-04-02"
+    "vendorDetails": "Dell Service Center",
+    "startDate": "2024-04-02"
   }
   ```
 
-#### 2. Receive from Maintenance
+#### 3. Receive from Maintenance
 
 - **Endpoint:** `PUT /maintenance/receive/:id`
+- **Description:** মেরামত সম্পন্ন করে অ্যাসেট স্ট্যাটাস আপডেট করে।
 - **Request Body:**
   ```json
   {
-    "receiveDate": "2024-04-05",
+    "completionDate": "2024-04-05",
     "repairCost": 2500,
-    "repairStatus": "Completed"
+    "status": "Completed",
+    "returnToOfficer": true
   }
   ```
+- **Note:** `returnToOfficer: true` হলে অ্যাসেটটি `Assigned` স্ট্যাটাসে ফিরে যাবে (যদি আগে অফিসার থাকে), আর `false` হলে `Available` হয়ে স্টোরে জমা হবে। `status` যদি `Unrepairable` হয় তবে অ্যাসেটটি `Disposed` হয়ে যাবে।
+
+#### 4. Maintenance History
+
+- **Endpoint:** `GET /maintenance/history/:assetId`
+- **Description:** একটি নির্দিষ্ট অ্যাসেটের সম্পূর্ণ মেরামতের ইতিহাস প্রদান করে।
 
 ---
 

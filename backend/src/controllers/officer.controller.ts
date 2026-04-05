@@ -6,15 +6,40 @@ export const getOfficers = async (
   res: Response,
 ): Promise<void> => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-    const skip = (page - 1) * limit;
+    const { page = 1, limit = 10, search, branchId, isActive } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const where: any = {};
+    
+    if (search) {
+      where.OR = [
+        { name: { contains: String(search) } },
+        { designation: { contains: String(search) } },
+        { employeeId: { contains: String(search) } },
+      ];
+    }
+
+    if (branchId) {
+      where.branchId = Number(branchId);
+    }
+
+    if (isActive !== undefined) {
+      where.isActive = isActive === 'true';
+    }
 
     const [officers, total] = await Promise.all([
       prisma.officer.findMany({
+        where,
         skip,
-        take: limit,
+        take: Number(limit),
         include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              role: true
+            }
+          },
           branch: {
             select: {
               id: true,
@@ -32,16 +57,19 @@ export const getOfficers = async (
         },
         orderBy: { id: "desc" },
       }),
-      prisma.officer.count(),
+      prisma.officer.count({ where }),
     ]);
+
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
 
     res.status(200).json({
       data: officers,
       meta: {
         total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
       },
     });
   } catch (error) {
@@ -95,6 +123,50 @@ export const getOfficerById = async (
     res.status(200).json(officer);
   } catch (error) {
     console.error("GetOfficerById error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getOfficerProfile = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const userId = (req as any).user.id;
+
+    const officer = await prisma.officer.findUnique({
+      where: { userId },
+      include: {
+        branch: {
+          select: {
+            id: true,
+            name: true,
+            code: true
+          }
+        },
+        assignments: {
+          where: {
+            actualReturnDate: null,
+          },
+          include: {
+            asset: {
+              include: {
+                category: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!officer) {
+      res.status(404).json({ message: "Officer profile not found" });
+      return;
+    }
+
+    res.status(200).json({ data: officer });
+  } catch (error) {
+    console.error("GetOfficerProfile error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

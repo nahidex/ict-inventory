@@ -43,7 +43,7 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/branches", branchRoutes);
 app.use("/api/officers", officerRoutes);
 app.use("/api/assignments", assignmentRoutes);
-app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/maintenances", maintenanceRoutes);
 app.use("/api/noc", nocRoutes);
 app.use("/api/activity-logs", activityLogRoutes);
 app.use("/api/dashboard", dashboardRoutes);

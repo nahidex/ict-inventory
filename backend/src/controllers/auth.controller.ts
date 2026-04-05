@@ -5,10 +5,10 @@ import prisma from "../config/db";
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, branchId, designation } = req.body;
 
-    if (!name || !email || !password) {
-      res.status(400).json({ message: "Please provide all fields" });
+    if (!name || !email || !password || !branchId) {
+      res.status(400).json({ message: "Please provide all required fields (name, email, password, branchId)" });
       return;
     }
 
@@ -17,33 +17,69 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
 
     if (userExists) {
-      res.status(400).json({ message: "User already exists" });
+      res.status(400).json({ message: "User already exists with this email" });
       return;
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
+    const result = await (prisma as any).$transaction(async (tx: any) => {
+      // 1. Create User
+      const user = await tx.user.create({
+        data: {
+          name,
+          email,
+          password: hashedPassword,
+          role: "USER",
+        },
+      });
+
+      // 2. Create Officer record (Linked to User, set to Inactive)
+      const officer = await tx.officer.create({
+        data: {
+          name,
+          email,
+          designation: designation || "New User",
+          isActive: false, // Set to inactive by default
+          branchId: parseInt(branchId),
+          userId: user.id,
+        },
+      });
+
+      return { user, officer };
+    });
+
+    res.status(201).json({
+      message: "Registration successful. Please wait for admin approval.",
+      user: {
+        id: result.user.id,
+        name: result.user.name,
+        email: result.user.email,
+        role: result.user.role,
+        officerId: result.officer.id
+      },
+    });
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getUnlinkedOfficers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const officers = await prisma.officer.findMany({
+      where: {
+        userId: null,
       },
       select: {
         id: true,
         name: true,
-        email: true,
-        role: true,
-        createdAt: true,
+        designation: true,
       },
     });
-
-    res.status(201).json({
-      message: "User registered successfully",
-      user,
-    });
+    res.status(200).json(officers);
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("GetUnlinkedOfficers error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -59,10 +95,25 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     const user = await prisma.user.findUnique({
       where: { email },
+      include: { 
+        officer: {
+          select: {
+            id: true,
+            isActive: true,
+            branchId: true
+          }
+        } 
+      }
     });
 
     if (!user) {
       res.status(401).json({ message: "Invalid credentials" });
+      return;
+    }
+
+    // Check if account is active (for non-admin roles)
+    if (user.role !== 'ADMIN' && user.officer && !user.officer.isActive) {
+      res.status(403).json({ message: "আপনার একাউন্টটি বর্তমানে নিষ্ক্রিয় অবস্থায় আছে। দয়া করে অ্যাডমিনের সাথে যোগাযোগ করুন।" });
       return;
     }
 
@@ -74,7 +125,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { 
+        id: user.id, 
+        email: user.email, 
+        role: user.role,
+        officerId: user.officer?.id || null,
+        branchId: user.officer?.branchId || null
+      },
       process.env.JWT_SECRET || "default_secret",
       { expiresIn: "1d" }
     );
@@ -87,6 +144,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         name: user.name,
         email: user.email,
         role: user.role,
+        officerId: user.officer?.id || null
       },
     });
   } catch (error) {

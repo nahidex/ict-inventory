@@ -9,7 +9,7 @@ import { authenticate } from "../middleware/auth.middleware";
 
 const router = Router();
 
-router.get("/", authenticate, getBranches);
+router.get("/", getBranches);
 router.post("/", authenticate, createBranch);
 router.patch("/:id", authenticate, updateBranch);
 router.get("/:id/assets", authenticate, getBranchAssets);

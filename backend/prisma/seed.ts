@@ -1,7 +1,7 @@
 import {
   PrismaClient,
   AssetStatus,
-  PurchaseSource,
+  NocStatus,
 } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
@@ -80,11 +80,21 @@ async function main() {
   ];
 
   for (const off of officersData) {
-    await prisma.officer.upsert({
-      where: { email: off.email },
-      update: off,
-      create: off,
-    });
+    const { email, ...data } = off;
+    if (!email) continue;
+    
+    // Check if officer exists by email first
+    const existing = await prisma.officer.findFirst({ where: { email } });
+    if (existing) {
+      await prisma.officer.update({
+        where: { id: existing.id },
+        data: data,
+      });
+    } else {
+      await prisma.officer.create({
+        data: off,
+      });
+    }
   }
 
   const allOfficers = await prisma.officer.findMany();
@@ -103,7 +113,7 @@ async function main() {
     SWT: ["Catalyst 2960", "TL-SG1024D", "MikroTik Cloud Core"],
   };
 
-  const sources: PurchaseSource[] = [PurchaseSource.Planning, PurchaseSource.Development, PurchaseSource.Budget_2];
+  const sources = ["Budget", "Admin_2", "Others"];
 
   console.log("📦 ৫০টি ডেমো এসেট তৈরি করা হচ্ছে...");
   
@@ -116,7 +126,7 @@ async function main() {
     
     // Weighted status: 60% Assigned, 30% Available, 10% Under_Repair
     const dice = Math.random();
-    let status = AssetStatus.Available;
+    let status: AssetStatus = AssetStatus.Available;
     if (dice < 0.6) status = AssetStatus.Assigned;
     else if (dice < 0.9) status = AssetStatus.Available;
     else status = AssetStatus.Under_Repair;
@@ -125,7 +135,7 @@ async function main() {
     const randomBranchId = branchIds[Math.floor(Math.random() * branchIds.length)];
     
     let currentOfficerId = null;
-    if (status === AssetStatus.Assigned) {
+    if ((status as string) === AssetStatus.Assigned) {
       currentOfficerId = allOfficers[Math.floor(Math.random() * allOfficers.length)].id;
     }
 
@@ -144,18 +154,37 @@ async function main() {
         brand,
         model,
         serialNumber,
-        categoryId: catMap[randomCatCode],
+        categoryId: catMap[randomCatCode as keyof typeof catMap],
         branchId: randomBranchId,
         currentOfficerId,
         status,
-        purchaseSource: source,
+        purchaseSource: source as any,
         purchaseDate: new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1),
         locationDetails: "সচিবালয় ভবন, ঢাকা",
       }
     });
 
+    // ৭. কিছু ডেমো মেইনটেন্যান্স রেকর্ড (Maintenance)
+    if (i <= 5) {
+      await (prisma as any).maintenance.create({
+        data: {
+          asset_id: asset.id,
+          issue_description: "নমুনা মেইনটেন্যান্স রিকোয়েস্ট (Seed Data)",
+          sent_date: new Date(),
+          repair_status: "Pending",
+          vendor_name: "নমুনা ভেন্ডর লিমিটেড",
+        }
+      });
+      
+      // আপডেট অ্যাসেট স্ট্যাটাস যদি মেইনটেন্যান্সে থাকে
+      await prisma.asset.update({
+        where: { id: asset.id },
+        data: { status: AssetStatus.Under_Repair }
+      });
+    }
+
     // ৬. অ্যাক্টিভিটি লগ ও অ্যাসাইনমেন্ট রেকর্ড
-    if (status === AssetStatus.Assigned && currentOfficerId) {
+    if ((status as string) === AssetStatus.Assigned && currentOfficerId) {
       const officer = allOfficers.find(o => o.id === currentOfficerId);
       
       // Cleanup old active assignments to prevent duplicates
