@@ -50,7 +50,7 @@ jobs:
             
             # Run database migrations
             echo "🗄️  Running database migrations..."
-            docker compose exec -T backend node node_modules/.bin/prisma migrate deploy || echo "Migration failed or already up to date"
+            docker compose exec -T backend node node_modules/prisma/build/index.js migrate deploy || echo "Migration failed or already up to date"
             
             # Optional: Seed database (uncomment if needed on every deploy)
             # echo "🌱 Seeding database..."

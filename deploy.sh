@@ -108,7 +108,7 @@ fi
 
 # Run database migrations
 print_status "Running database migrations..."
-docker compose exec -T backend node node_modules/.bin/prisma migrate deploy || print_warning "Migrations failed or already up to date"
+docker compose exec -T backend node node_modules/prisma/build/index.js migrate deploy || print_warning "Migrations failed or already up to date"
 
 # Optional: Seed database (only for first deployment)
 read -p "Do you want to seed the database? (y/N): " -n 1 -r
