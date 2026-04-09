@@ -41,6 +41,10 @@ DB_USER=asset_user
 DB_PASSWORD=your_secure_password_here
 DB_NAME=asset_lifecycle_db
 JWT_SECRET=your_jwt_secret_minimum_32_characters
+
+# IMPORTANT: Frontend API URL - Set to your server's IP or domain
+# Example: http://192.168.1.100:5000 or http://api.yourdomain.com
+VITE_API_URL=http://YOUR_SERVER_IP:5000
 ```
 
 ### 3. Manual Deployment Test (প্রথমবার)
