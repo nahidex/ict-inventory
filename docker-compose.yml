@@ -37,8 +37,10 @@ services:
       PORT: ${PORT:-5000}
       DATABASE_URL: mysql://${DB_USER:-asset_user}:${DB_PASSWORD:-password}@db:3306/${DB_NAME:-asset_lifecycle_db}
       JWT_SECRET: ${JWT_SECRET:-your_super_secret_key_here_change_in_production}
-    ports:
-      - "${PORT:-5000}:5000"
+    # Backend port is now accessed via nginx reverse proxy on port 3000
+    # Uncomment below line only if you need direct access to backend (debugging)
+    # ports:
+    #   - "${PORT:-5000}:5000"
     volumes:
       - ./backend/uploads:/app/uploads
       - ./backend/prisma:/app/prisma

@@ -1,5 +1,17 @@
 # Quick Docker Commands Reference
 
+## Architecture Overview
+
+This application uses **Nginx Reverse Proxy** architecture:
+- **Frontend**: Port 3000 (Nginx serving static files + reverse proxy)
+- **Backend**: Internal only (accessed via nginx proxy at /api)
+- **Database**: Internal only (port 3307 optional for external access)
+
+**Access URLs:**
+- Frontend: `http://server-ip:3000`
+- Backend API: `http://server-ip:3000/api` (proxied internally)
+- Uploads: `http://server-ip:3000/uploads` (proxied internally)
+
 ## Common Commands
 
 ### Start services

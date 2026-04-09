@@ -138,6 +138,36 @@ git push origin main
 6. ✅ Container status check হবে
 7. ✅ Logs show করবে
 
+## 🔄 Nginx Reverse Proxy Architecture
+
+এই application এ **nginx reverse proxy** ব্যবহার করা হয়েছে। এর মানে:
+
+**Single Port Access (3000):**
+- Frontend: `http://your-server:3000/`
+- Backend API: `http://your-server:3000/api` (proxied internally)
+- Uploads: `http://your-server:3000/uploads` (proxied internally)
+
+**Benefits:**
+- ✅ একটা port দিয়ে সব access
+- ✅ Backend port (5000) expose করার দরকার নেই
+- ✅ CORS issue সম্পূর্ণ eliminated
+- ✅ SSL/HTTPS setup সহজ
+- ✅ Better security
+- ✅ Production-ready architecture
+
+**Internal Architecture:**
+```
+Browser Request
+     ↓
+http://server:3000/api/auth/login
+     ↓
+Nginx (Frontend Container)
+     ↓
+Reverse Proxy to backend:5000/api/auth/login
+     ↓
+Backend Container (Internal Network)
+```
+
 ## 📊 Deployment Status Check
 
 ### GitHub Actions এ দেখুন:
@@ -156,6 +186,12 @@ docker compose logs -f
 
 # Specific service logs
 docker compose logs backend -f
+docker compose logs frontend -f
+
+# Access URLs (all via single port 3000):
+# Frontend: http://YOUR_SERVER_IP:3000
+# Backend API: http://YOUR_SERVER_IP:3000/api (proxied)
+# Health Check: http://YOUR_SERVER_IP:3000/api/health
 ```
 
 ## 🔄 Manual Deployment

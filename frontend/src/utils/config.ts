@@ -1,17 +1,15 @@
-// Smart API URL detection for both local and production Docker environments
+// Smart API URL detection for Docker deployment with nginx reverse proxy
 const getApiUrl = (): string => {
   // If VITE_API_URL is explicitly set, use it (for custom configurations)
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
 
-  // Auto-detect API URL based on current browser location
-  // Works for both local (localhost) and production (server IP/domain)
-  const protocol = window.location.protocol; // http: or https:
-  const hostname = window.location.hostname; // localhost, 192.168.x.x, or domain
-  const apiPort = '5000'; // Backend always runs on port 5000
-
-  return `${protocol}//${hostname}:${apiPort}`;
+  // Use relative URL - nginx reverse proxy will handle routing to backend
+  // This works for both local and production deployments
+  // Frontend: http://localhost:3000 → API: http://localhost:3000/api (proxied to backend:5000)
+  // Frontend: http://server-ip:3000 → API: http://server-ip:3000/api (proxied to backend:5000)
+  return window.location.origin;
 };
 
 const API_URL = getApiUrl();
