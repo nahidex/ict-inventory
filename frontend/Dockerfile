@@ -3,8 +3,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Accept build arguments
-ARG VITE_API_URL=http://localhost:5000
+# Accept build arguments (optional - frontend auto-detects if not provided)
+ARG VITE_API_URL
 
 # Copy package files
 COPY package*.json ./
@@ -15,7 +15,8 @@ RUN npm install --legacy-peer-deps
 # Copy source code
 COPY . .
 
-# Build the application with environment variable
+# Build the application
+# VITE_API_URL is optional - if not set, frontend will auto-detect API URL
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 

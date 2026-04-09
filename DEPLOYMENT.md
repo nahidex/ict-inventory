@@ -42,10 +42,17 @@ DB_PASSWORD=your_secure_password_here
 DB_NAME=asset_lifecycle_db
 JWT_SECRET=your_jwt_secret_minimum_32_characters
 
-# IMPORTANT: Frontend API URL - Set to your server's IP or domain
-# Example: http://192.168.1.100:5000 or http://api.yourdomain.com
-VITE_API_URL=http://YOUR_SERVER_IP:5000
+# Frontend API URL (OPTIONAL)
+# Frontend automatically detects API URL from browser location
+# Only set this if you need a custom API URL different from auto-detection
+# Leave commented out for automatic detection (RECOMMENDED)
+# VITE_API_URL=http://custom-api-url:5000
 ```
+
+**Note:** Frontend স্বয়ংক্রিয়ভাবে API URL detect করে browser এর location থেকে:
+- Access: `http://localhost:3000` → API: `http://localhost:5000`
+- Access: `http://192.168.1.100:3000` → API: `http://192.168.1.100:5000`
+- Access: `http://yourserver.com:3000` → API: `http://yourserver.com:5000`
 
 ### 3. Manual Deployment Test (প্রথমবার)
 

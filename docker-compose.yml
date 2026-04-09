@@ -57,7 +57,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000}
+        # Optional: Only set VITE_API_URL if you need custom API URL
+        # By default, frontend auto-detects API URL from browser location
+        VITE_API_URL: ${VITE_API_URL:-}
     container_name: asset-lifecycle-frontend
     restart: unless-stopped
     depends_on:

@@ -1,4 +1,5 @@
 import apiClient from './apiClient';
+import { config } from '../utils/config';
 
 export interface Asset {
   id: number;
@@ -37,8 +38,8 @@ export interface AssetListResponse {
   };
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const UPLOADS_BASE_URL = API_BASE_URL.replace('/api', '');
+const API_BASE_URL = `${config.apiUrl}/api`;
+const UPLOADS_BASE_URL = config.apiUrl;
 
 interface RawAsset extends Omit<Asset, 'initialImageUrl' | 'imageUrl'> {
   initialImageUrl?: string | null;
