@@ -1,0 +1,73 @@
+name: Deploy to Linux Server
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            echo "🚀 Starting deployment..."
+            
+            # Navigate to project directory
+            cd ${{ secrets.DEPLOY_PATH || '/DATA/AppData/asset-lifecycle' }}
+            
+            # Pull latest code
+            echo "📥 Pulling latest code from GitHub..."
+            git pull origin main || git pull origin master
+            
+            # Stop running containers
+            echo "🛑 Stopping containers..."
+            docker compose down
+            
+            # Build new images
+            echo "🔨 Building Docker images..."
+            docker compose build --no-cache
+            
+            # Start containers
+            echo "▶️  Starting containers..."
+            docker compose up -d
+            
+            # Wait for services to be healthy
+            echo "⏳ Waiting for services to start..."
+            sleep 10
+            
+            # Run database migrations
+            echo "🗄️  Running database migrations..."
+            docker compose exec -T backend npx prisma migrate deploy || echo "Migration failed or already up to date"
+            
+            # Optional: Seed database (uncomment if needed on every deploy)
+            # echo "🌱 Seeding database..."
+            # docker compose exec -T backend node prisma/seed.js
+            
+            # Show container status
+            echo "✅ Deployment complete! Container status:"
+            docker compose ps
+            
+            # Show logs
+            echo "📋 Recent logs:"
+            docker compose logs --tail=50
+
+      - name: Deployment Status
+        if: success()
+        run: echo "✅ Deployment successful!"
+
+      - name: Deployment Failed
+        if: failure()
+        run: echo "❌ Deployment failed!"

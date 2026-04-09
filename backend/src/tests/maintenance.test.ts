@@ -141,7 +141,7 @@ describe("Maintenance Endpoints", () => {
       });
 
       const maintenance = await prisma.maintenance.findFirst({
-        where: { assetId },
+        where: { asset_id: assetId },
         orderBy: { id: 'desc' }
       });
 
@@ -169,9 +169,9 @@ describe("Maintenance Endpoints", () => {
       
       const maintenance = await prisma.maintenance.create({
         data: {
-          assetId,
-          issueDescription: "Store test",
-          status: "Pending"
+          asset_id: assetId,
+          issue_description: "Store test",
+          repair_status: "Pending"
         }
       });
 

@@ -113,7 +113,7 @@ async function main() {
         branchId: branchIds[0],
         currentOfficerId: targetOfficerId,
         status: status,
-        purchaseSource: "Planning",
+        purchaseSource: "Budget",
         purchaseDate: new Date("2024-01-01"),
         locationDetails: "সচিবালয়, ঢাকা",
       }

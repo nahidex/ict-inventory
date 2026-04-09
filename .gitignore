@@ -1,6 +1,43 @@
 node_modules
-# Keep environment variables out of version control
-.env
 
+# Environment variables - Keep out of version control
+.env
+.env.local
+.env.*.local
+
+# Generated files
 /src/generated/prisma
+
+# Uploads
 uploads/
+
+# Docker volumes and data
+mysql_data/
+postgres_data/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Test coverage
+coverage/
+.nyc_output/
