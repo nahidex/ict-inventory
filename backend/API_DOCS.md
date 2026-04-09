@@ -12,7 +12,39 @@ Base URL: `http://localhost:3000/api`
 
 ### Auth API Details
 
-#### 1. Login
+#### 1. Register
+
+- **Endpoint:** `POST /auth/register`
+- **Request Body:**
+  ```json
+  {
+    "name": "Karim Ahmed",
+    "email": "karim@example.com",
+    "phone": "01712345678",
+    "password": "password123",
+    "branchId": "1",
+    "designation": "প্রোগ্রামার"
+  }
+  ```
+- **Response (201 Created):**
+  ```json
+  {
+    "message": "Registration successful. Please wait for admin approval.",
+    "user": {
+      "id": 5,
+      "name": "Karim Ahmed",
+      "email": "karim@example.com",
+      "role": "USER",
+      "officerId": 10
+    }
+  }
+  ```
+- **Notes:**
+  - নতুন অফিসার registration করতে `name`, `email`, `phone`, `password`, `branchId` বাধ্যতামূলক।
+  - Officer রেকর্ড `isActive: false` দিয়ে তৈরি হবে (Admin approval প্রয়োজন)।
+  - User role ডিফল্ট `USER` হবে।
+
+#### 2. Login
 
 - **Endpoint:** `POST /auth/login`
 - **Request Body:**
