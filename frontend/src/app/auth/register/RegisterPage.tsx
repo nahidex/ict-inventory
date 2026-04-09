@@ -9,6 +9,7 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
     branchId: '',
@@ -52,7 +53,10 @@ export default function RegisterPage() {
       setError('দয়া করে শাখা নির্বাচন করুন।');
       return;
     }
-
+    if (!formData.phone) {
+      setError('দয়া করে ফোন নাম্বার দিন।');
+      return;
+    }
     if (formData.password !== formData.confirmPassword) {
       setError('পাসওয়ার্ড মিলছে না।');
       return;
@@ -64,6 +68,7 @@ export default function RegisterPage() {
       const payload = {
         name: formData.name,
         email: formData.email,
+        phone: formData.phone,
         password: formData.password,
         branchId: formData.branchId,
         designation: formData.designation
@@ -141,6 +146,26 @@ export default function RegisterPage() {
                   value={formData.designation}
                   onChange={handleChange}
                   placeholder="যেমন: প্রোগ্রামার"
+                  className="w-full bg-surface-container-lowest border border-outline-variant rounded-2xl pl-12 pr-4 py-4 font-bold text-on-surface focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none"
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            {/* Phone */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-black text-on-surface-variant uppercase tracking-[0.2em] ml-2 tracking-widest">ফোন নাম্বার</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">
+                  <MaterialIcon name="phone" size={22} />
+                </span>
+                <input
+                  name="phone"
+                  type="tel"
+                  required
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="যেমন: 01XXXXXXXXX"
                   className="w-full bg-surface-container-lowest border border-outline-variant rounded-2xl pl-12 pr-4 py-4 font-bold text-on-surface focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none"
                   disabled={loading}
                 />

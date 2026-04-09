@@ -5,10 +5,10 @@ import prisma from "../config/db";
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, email, password, branchId, designation } = req.body;
+    const { name, email, password, branchId, designation, phone } = req.body;
 
-    if (!name || !email || !password || !branchId) {
-      res.status(400).json({ message: "Please provide all required fields (name, email, password, branchId)" });
+    if (!name || !email || !password || !branchId || !phone) {
+      res.status(400).json({ message: "Please provide all required fields (name, email, password, branchId, phone)" });
       return;
     }
 
@@ -40,6 +40,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
           name,
           email,
           designation: designation || "New User",
+          phone,
           isActive: false, // Set to inactive by default
           branchId: parseInt(branchId),
           userId: user.id,
