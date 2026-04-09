@@ -51,7 +51,7 @@ JWT_SECRET=your_jwt_secret_minimum_32_characters
 
 # অথবা manual deployment:
 docker compose up -d
-docker compose exec backend npx prisma migrate deploy
+docker compose exec backend node node_modules/.bin/prisma migrate deploy
 docker compose exec backend node prisma/seed.js
 ```
 
@@ -194,7 +194,7 @@ cd /DATA/AppData/asset-lifecycle
 **Issue: Database Migration Failed**
 - Database running আছে কিনা check করুন: `docker compose ps`
 - Database logs দেখুন: `docker compose logs db`
-- Manually migrate করুন: `docker compose exec backend npx prisma migrate deploy`
+- Manually migrate করুন: `docker compose exec backend node node_modules/.bin/prisma migrate deploy`
 
 **Issue: Container Won't Start**
 - `.env` file properly configured আছে কিনা check করুন
